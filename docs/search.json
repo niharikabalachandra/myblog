@@ -25,20 +25,13 @@
     "href": "posts/welcome/index.html",
     "title": "Welcome To My Blog",
     "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
+    "text": "Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I’ve led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.\nBut, let’s make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.\nExpect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!\nIf this labor of love enriches your life, please consider supporting it with a donation. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know."
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "Niharika’s Blog",
     "section": "",
-    "text": "Post With Code\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\nHarlow Malloc\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\nTristan O’Malley\n\n\nJan 25, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+    "text": "Welcome To My Blog\n\n\n\ntrue\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\nNo matching items"
   }
 ]
