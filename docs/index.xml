@@ -12,30 +12,8 @@
 <generator>quarto-1.4.549</generator>
 <lastBuildDate>Sun, 28 Jan 2024 08:00:00 GMT</lastBuildDate>
 <item>
-  <title>Post With Code</title>
-  <dc:creator>Harlow Malloc</dc:creator>
-  <link>https://www.niharikabalachandra.com/posts/post-with-code/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<p>This is a post with executable code.</p>
-
-
-
- ]]></description>
-  <category>news</category>
-  <category>code</category>
-  <category>analysis</category>
-  <guid>https://www.niharikabalachandra.com/posts/post-with-code/</guid>
-  <pubDate>Sun, 28 Jan 2024 08:00:00 GMT</pubDate>
-  <media:content url="https://www.niharikabalachandra.com/posts/post-with-code/image.jpg" medium="image" type="image/jpeg"/>
-</item>
-<item>
   <title>Welcome To My Blog</title>
-  <dc:creator>Tristan O&#39;Malley</dc:creator>
+  <dc:creator>Niharika Balachandra</dc:creator>
   <link>https://www.niharikabalachandra.com/posts/welcome/</link>
   <description><![CDATA[ 
 
@@ -43,16 +21,18 @@
 
 
 
-<p>This is the first post in a Quarto blog. Welcome!</p>
-<p><img src="https://www.niharikabalachandra.com/posts/welcome/thumbnail.jpg" class="img-fluid"></p>
-<p>Since this post doesn’t specify an explicit <code>image</code>, the first image in the post will be used in the listing page of posts.</p>
+<p>Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I’ve led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.</p>
+<p>But, let’s make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.</p>
+<p>Expect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!</p>
+<p>If this labor of love enriches your life, please consider supporting it with a <a href="https://www.buymeacoffee.com/niharikaba1" class="external" target="_blank">donation</a>. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know.</p>
 
 
 
  ]]></description>
-  <category>news</category>
+  <category>true</category>
   <guid>https://www.niharikabalachandra.com/posts/welcome/</guid>
-  <pubDate>Thu, 25 Jan 2024 08:00:00 GMT</pubDate>
+  <pubDate>Sun, 28 Jan 2024 08:00:00 GMT</pubDate>
+  <media:content url="https://www.niharikabalachandra.com/posts/welcome/thumbnail.jpg" medium="image" type="image/jpeg"/>
 </item>
 </channel>
 </rss>
