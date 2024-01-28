@@ -26,7 +26,9 @@
 
 
  ]]></description>
-  <category>true</category>
+  <category>news</category>
+  <category>code</category>
+  <category>analysis</category>
   <guid>https://www.niharikabalachandra.com/posts/post-with-code/</guid>
   <pubDate>Sun, 28 Jan 2024 08:00:00 GMT</pubDate>
   <media:content url="https://www.niharikabalachandra.com/posts/post-with-code/image.jpg" medium="image" type="image/jpeg"/>
@@ -48,7 +50,7 @@
 
 
  ]]></description>
-  <category>true</category>
+  <category>news</category>
   <guid>https://www.niharikabalachandra.com/posts/welcome/</guid>
   <pubDate>Thu, 25 Jan 2024 08:00:00 GMT</pubDate>
 </item>
