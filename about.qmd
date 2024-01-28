@@ -1,0 +1,40 @@
+---
+title: "Niharika Balachandra"
+image: profile1.jpg
+about:
+  template: trestles
+  image-shape: round
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/niharikabalachandra/
+    - icon: github
+      text: Github
+      href: https://github.com/niharikabalachandra
+
+---
+
+Welcome to Niharika's personal blog—an intersection of data, technology, and creativity. Niharika is a seasoned Data Science Manager with a seven-year track record in leading teams focused on Machine Learning, Natural Language Processing, and Deep Learning.
+
+Niharika is proficient in guiding teams specializing in Consumer Behavior Analytics, Predictive Modeling, Deep Learning, and more, particularly within the domains of eCommerce and Ad Tech. Her passion lies in translating quantifiable data into actionable insights that positively shape businesses. Niharika brings a unique blend of market awareness and technical prowess, ensuring the delivery of user-centric products and solutions.
+
+When not innovating on data platforms, Niharika unwinds by molding clay on a potter's wheel and immersing herself in the strokes of paint on canvas.
+
+Explore Niharika's blog to embark on a journey where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future. 
+
+## Education
+
+**University of Illinois at Chicago** | Chicago, IL
+
+Master of Science in Electrical and Computer Engineering, Aug 2015 - May 2017
+
+
+**M. S. Ramaiah Institute of technology** | Bangalore, India
+
+Bachelor’s in Electronics and Communication Engineering (B.E), Sept 2007 - June 2011
+
+## Experience
+
+**Skai.io (formerly Kenshoo Inc.)** | Data Science Manager | Mar 2019 - present
+
+**Publicis Sapient** | Associate Data Scientist | Aug 2017 - Mar 2019

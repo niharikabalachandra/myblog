@@ -1,0 +1,44 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Niharika’s Blog",
+    "section": "",
+    "text": "Post With Code\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\nHarlow Malloc\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\nTristan O’Malley\n\n\nJan 25, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "Niharika Balachandra",
+    "section": "",
+    "text": "Welcome to Niharika’s personal blog—an intersection of data, technology, and creativity. Niharika is a seasoned Data Science Manager with a seven-year track record in leading teams focused on Machine Learning, Natural Language Processing, and Deep Learning.\nNiharika is proficient in guiding teams specializing in Consumer Behavior Analytics, Predictive Modeling, Deep Learning, and more, particularly within the domains of eCommerce and Ad Tech. Her passion lies in translating quantifiable data into actionable insights that positively shape businesses. Niharika brings a unique blend of market awareness and technical prowess, ensuring the delivery of user-centric products and solutions.\nWhen not innovating on data platforms, Niharika unwinds by molding clay on a potter’s wheel and immersing herself in the strokes of paint on canvas.\nExplore Niharika’s blog to embark on a journey where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future."
+  },
+  {
+    "objectID": "about.html#education",
+    "href": "about.html#education",
+    "title": "Niharika Balachandra",
+    "section": "Education",
+    "text": "Education\nUniversity of Illinois at Chicago | Chicago, IL\nMaster of Science in Electrical and Computer Engineering, Aug 2015 - May 2017\nM. S. Ramaiah Institute of technology | Bangalore, India\nBachelor’s in Electronics and Communication Engineering (B.E), Sept 2007 - June 2011"
+  },
+  {
+    "objectID": "about.html#experience",
+    "href": "about.html#experience",
+    "title": "Niharika Balachandra",
+    "section": "Experience",
+    "text": "Experience\nSkai.io (formerly Kenshoo Inc.) | Data Science Manager | Mar 2019 - present\nPublicis Sapient | Associate Data Scientist | Aug 2017 - Mar 2019"
+  }
+]
