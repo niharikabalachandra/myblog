@@ -12,6 +12,8 @@ website:
         href: https://github.com/niharikabalachandra
       - icon: linkedin
         href: https://www.linkedin.com/in/niharikabalachandra/
+      - icon: bi bi-gift
+        href: https://www.buymeacoffee.com/niharikaba1
       - icon: rss
         href: index.xml 
 format:
