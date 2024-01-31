@@ -4,6 +4,24 @@ author: "Niharika Balachandra"
 date: "2024-01-28"
 categories: [news]
 image: "thumbnail.jpg"
+
+filters:
+  - social-share
+format: 
+  html:
+    toc: true
+share:
+  permalink: "https://niharikabalachandra.com/posts/welcome/"
+  description: "Welcome to my blog!"
+  twitter: true
+  facebook: true
+  reddit: true
+  stumble: False
+  tumblr: False
+  linkedin: true
+  email: true
+  mastodon: False
+  location: "before-body"
 ---
 
 Welcome to my blog! I'm Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I've led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.
