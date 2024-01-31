@@ -7,6 +7,9 @@ freeze: true
 # Enable banner style title blocks
 title-block-banner: true
 
+# Author name of all blog posts
+author: 'Albert Rapp'
+
 comments: 
   utterances: 
     repo:  niharikabalachandra/blog_comments
