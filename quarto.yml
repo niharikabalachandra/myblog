@@ -2,4 +2,6 @@ website:
   title: "myblog"
   site-url: https://www.niharikabalachandra.com
   description: "Niharika's blog where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future. "
+  cookie-consent: true
+  google-analytics: "G-HW7V68ZHXG"
   
