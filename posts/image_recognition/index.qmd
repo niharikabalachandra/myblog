@@ -1,0 +1,125 @@
+---
+title: "Image Recognition Engine with GenAI Explanation"
+author: "Niharika Balachandra"
+date: "2024-02-03"
+categories: [code, analysis, deploy]
+image: "image.jpg"
+draft: false
+
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+# The Deployed Application
+<iframe
+	src="https://niharikabalachandra-find-and-explain-flowers-streamlit.hf.space"
+	frameborder="0"
+	width="850"
+	height="450"
+></iframe>
+
+# Introduction: Unpacking the Application
+I wanted to develop an Image Recognition Engine that not only identifies images but also offers an initial explanation of the recognized image using an open-source, large language model. The ultimate goal was to create a self-contained application that goes beyond image recognition and also serves as a starting point to gain an understanding of what an identified image is all about. 
+
+This particular application shown above focuses on recognition of flowers and is based on the [102 Category Flower Dataset](https://www.robots.ox.ac.uk/~vgg/data/flowers/102/index.html)
+
+There are 3 main components to the app and I explain each component in more detail in the following sections: 
+- Image Recognition
+- Generating Image Explanation via LLM
+- Streamlit Application 
+
+# Image Recognition
+
+## Model Tuning 
+The idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there a host of other pre-trained vision models you can find via [pytorch-image-models or timm](https://github.com/huggingface/pytorch-image-models?tab=readme-ov-file#models). The easiest way to fine tune the Resnet50 pre-trained model is using the [fastai library](https://timm.fast.ai/#Fine-tune-timm-model-in-fastai). Here is the [notebook](https://www.kaggle.com/code/niharikabalachandra/flowerdetector-oxford-102-flowers
+) I used to generate a pickled version of the finetuned model. 
+
+## Deploying on Hugging Face 
+We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to hugging face is really simple via the UI and this [doc](https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface) walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.
+
+```{python}
+#| output: false
+#| eval: false
+from huggingface_hub import hf_hub_download
+
+REPO_ID = "username/huggingface_repo"
+FILENAME = "export.pkl"
+
+model_file_name = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)
+```
+
+## Architecture
+
+```{mermaid}
+---
+title: Model Fine-tuning
+---
+flowchart LR
+  A(Resnet50 Pre-trained Model) --> B(Fine-tuned for Indentification of Flowers)
+  B --> C(Serialized Model)
+```
+```{mermaid}
+---
+title: Deploying Model on Hugging Face 
+---
+flowchart LR
+ C(Serialized Fine-tuned Model) --> D(Host Serialized Model on Hugging Face)
+D --> E(Load Model as needed)
+```
+
+# Generating Image Explanation via LLM
+
+## Deploying Quantized LLM on Hugging Face
+The idea here is to host a dockerized version of a quantized open source LLM using the CPU tier on Hugging Face Spaces and exposing the LLM via an API endpoint for us to then be able to interact with for free. I chose to use [Zephyr 7B Alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha) which is a fine-tuned version of Mistral AI's [Mistral-7B-v0.1](mistralai/Mistral-7B-v0.1).
+
+My implementation of this step is inspired by this [blog post](https://gathnex.medium.com/how-to-deploy-llm-for-free-of-cost-6e7947d9b64a) that goes over the exact process of getting to an API endpoint.
+
+## Architecture
+
+```{mermaid}
+---
+title: Deploying Quantized LLM on Hugging Face
+---
+flowchart LR
+C(FastAPI Function for LLM completion) --> D(Containerize our Application)
+D --> E(Deploy via Hugging Face Spaces)
+E --> F(Fast API Endpoint)
+```
+
+
+# Streamlit Application 
+## Deploying Streamlit Application on Hugging Face Spaces
+I start with creating a new [Streamlit Hugging Face Space](https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space). I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the [app.py](https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py) file for more information. 
+
+## Architecture
+
+```{mermaid}
+---
+title: Streamlit Application on Hugging Space Spaces
+---
+flowchart LR
+
+D(Build App User Interface)
+D --> B(Upload Flower Image)
+D --> C(Load Image Recognition Model)
+B --> C
+C --> E{Identify Flower Species}
+E --> N(Output Identified Flower Species)
+
+E --> F(Pass Identified Label to LLM)
+F --> G(Generate LLM Response)
+G --> O(Ouput Response on Identified Flower Species)
+O --> D
+```
+
+
+
+# Reference
+#### Model tuning | Image Recognition
+- My approach was insipred by this kaggle [notebook](https://www.kaggle.com/code/hobaak/flowerdetector-oxford-102-flowers)
+
+#### Deploying Quantized LLM on Hugging Face | Generating Image Explanation via LLM
+- The [blog post](https://gathnex.medium.com/how-to-deploy-llm-for-free-of-cost-6e7947d9b64a) that goes over the exact process of getting to an API endpoint
+

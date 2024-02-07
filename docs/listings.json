@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/image_recognition/index.html",
       "/posts/welcome/index.html"
     ]
   }

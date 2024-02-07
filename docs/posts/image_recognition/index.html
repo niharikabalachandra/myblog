@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Niharika Balachandra">
+<meta name="dcterms.date" content="2024-02-03">
 
-<title>My Blog - Niharika Balachandra</title>
+<title>My Blog - Image Recognition Engine with GenAI Explanation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,26 +22,61 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/cookie-consent/cookie-consent.js"></script>
-<link href="site_libs/cookie-consent/cookie-consent.css" rel="stylesheet">
-<script src="site_libs/quarto-html/quarto.js"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/cookie-consent/cookie-consent.js"></script>
+<link href="../../site_libs/cookie-consent/cookie-consent.css" rel="stylesheet">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -94,19 +131,22 @@ cookieconsent.run({
 });
 </script> 
   
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="../../styles.css">
 </head>
 
 <body class="nav-fixed fullcontent">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">My Blog</span>
     </a>
   </div>
@@ -117,7 +157,7 @@ cookieconsent.run({
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./about.html" aria-current="page"> 
+    <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">Niharika Balachandra</span></a>
   </li>  
   <li class="nav-item compact">
@@ -141,7 +181,7 @@ cookieconsent.run({
 <span class="menu-text"></span></a>
   </li>  
   <li class="nav-item compact">
-    <a class="nav-link" href="./index.xml"> <i class="bi bi-rss" role="img">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -153,59 +193,216 @@ cookieconsent.run({
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Image Recognition Engine with GenAI Explanation</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">analysis</div>
+                <div class="quarto-category">deploy</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Niharika Balachandra </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">February 3, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     
 <!-- main -->
-<div class="quarto-about-trestles content">
-  <div class="about-entity">
-    <img src="profile1.jpg" class="about-image
-  round " style="height: 20em; width: 20em;">
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Niharika Balachandra</h1>
-</div>
-<div class="quarto-title-meta">
-  </div>
-</header>
-    <div class="about-links">
-  <a href="https://www.linkedin.com/in/niharikabalachandra/" class="about-link" rel="" target="">
-    <i class="bi bi-linkedin"></i>
-     <span class="about-link-text">LinkedIn</span>
-  </a>
-  <a href="https://github.com/niharikabalachandra" class="about-link" rel="" target="">
-    <i class="bi bi-github"></i>
-     <span class="about-link-text">Github</span>
-  </a>
-  <a href="https://medium.com/@niharikabalachandra" class="about-link" rel="" target="">
-    <i class="bi bi-medium"></i>
-     <span class="about-link-text">Medium</span>
-  </a>
-</div>
-  </div>
-  <div class="about-contents"><main class="content" id="quarto-document-content">
-<p>Welcome to Niharika’s personal blog—an intersection of data, technology, and creativity. Niharika is a seasoned Data Science Manager with a seven-year track record in leading teams focused on Machine Learning, Natural Language Processing, and Deep Learning.</p>
-<p>Niharika is proficient in guiding teams specializing in Generative AI, Consumer Behavior Analytics, Predictive Modeling, Deep Learning, and more, particularly within the domains of eCommerce and Ad Tech. Her passion lies in translating quantifiable data into actionable insights that positively shape businesses. Niharika brings a unique blend of market awareness and technical prowess, ensuring the delivery of user-centric products and solutions.</p>
-<p>When not innovating on data platforms, Niharika unwinds by molding clay on a potter’s wheel and immersing herself in the strokes of paint on canvas.</p>
-<p>Explore Niharika’s blog to embark on a journey where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future.</p>
-<section id="education" class="level2">
-<h2 data-anchor-id="education">Education</h2>
-<p><strong>University of Illinois at Chicago</strong> | Chicago, IL</p>
-<p>Master of Science in Electrical and Computer Engineering, Aug 2015 - May 2017</p>
-<p><strong>M. S. Ramaiah Institute of technology</strong> | Bangalore, India</p>
-<p>Bachelor’s in Electronics and Communication Engineering (B.E), Sept 2007 - June 2011</p>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="the-deployed-application" class="level1">
+<h1>The Deployed Application</h1>
+<iframe src="https://niharikabalachandra-find-and-explain-flowers-streamlit.hf.space" frameborder="0" width="850" height="450">
+</iframe>
 </section>
-<section id="experience" class="level2">
-<h2 data-anchor-id="experience">Experience</h2>
-<p><strong>Skai.io (formerly Kenshoo Inc.)</strong> | Data Science Manager | Mar 2019 - present</p>
-<p><strong>Publicis Sapient</strong> | Associate Data Scientist | Aug 2017 - Mar 2019</p>
+<section id="introduction-unpacking-the-application" class="level1">
+<h1>Introduction: Unpacking the Application</h1>
+<p>I wanted to develop an Image Recognition Engine that not only identifies images but also offers an initial explanation of the recognized image using an open-source, large language model. The ultimate goal was to create a self-contained application that goes beyond image recognition and also serves as a starting point to gain an understanding of what an identified image is all about.</p>
+<p>This particular application shown above focuses on recognition of flowers and is based on the <a href="https://www.robots.ox.ac.uk/~vgg/data/flowers/102/index.html">102 Category Flower Dataset</a></p>
+<p>There are 3 main components to the app and I explain each component in more detail in the following sections: - Image Recognition - Generating Image Explanation via LLM - Streamlit Application</p>
+</section>
+<section id="image-recognition" class="level1">
+<h1>Image Recognition</h1>
+<section id="model-tuning" class="level2">
+<h2 class="anchored" data-anchor-id="model-tuning">Model Tuning</h2>
+<p>The idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there a host of other pre-trained vision models you can find via <a href="https://github.com/huggingface/pytorch-image-models?tab=readme-ov-file#models">pytorch-image-models or timm</a>. The easiest way to fine tune the Resnet50 pre-trained model is using the <a href="https://timm.fast.ai/#Fine-tune-timm-model-in-fastai">fastai library</a>. Here is the <a href="https://www.kaggle.com/code/niharikabalachandra/flowerdetector-oxford-102-flowers">notebook</a> I used to generate a pickled version of the finetuned model.</p>
+</section>
+<section id="deploying-on-hugging-face" class="level2">
+<h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
+<p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to hugging face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
+<div id="8088deb7" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> huggingface_hub <span class="im">import</span> hf_hub_download</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>REPO_ID <span class="op">=</span> <span class="st">"username/huggingface_repo"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>FILENAME <span class="op">=</span> <span class="st">"export.pkl"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>model_file_name <span class="op">=</span> hf_hub_download(repo_id<span class="op">=</span>REPO_ID, filename<span class="op">=</span>FILENAME)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="architecture" class="level2">
+<h2 class="anchored" data-anchor-id="architecture">Architecture</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+title: Model Fine-tuning
+---
+flowchart LR
+  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Indentification of Flowers)
+  B --&gt; C(Serialized Model)
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+title: Deploying Model on Hugging Face 
+---
+flowchart LR
+ C(Serialized Fine-tuned Model) --&gt; D(Host Serialized Model on Hugging Face)
+D --&gt; E(Load Model as needed)
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="generating-image-explanation-via-llm" class="level1">
+<h1>Generating Image Explanation via LLM</h1>
+<section id="deploying-quantized-llm-on-hugging-face" class="level2">
+<h2 class="anchored" data-anchor-id="deploying-quantized-llm-on-hugging-face">Deploying Quantized LLM on Hugging Face</h2>
+<p>The idea here is to host a dockerized version of a quantized open source LLM using the CPU tier on Hugging Face Spaces and exposing the LLM via an API endpoint for us to then be able to interact with for free. I chose to use <a href="https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha">Zephyr 7B Alpha</a> which is a fine-tuned version of Mistral AI’s <a href="mistralai/Mistral-7B-v0.1">Mistral-7B-v0.1</a>.</p>
+<p>My implementation of this step is inspired by this <a href="https://gathnex.medium.com/how-to-deploy-llm-for-free-of-cost-6e7947d9b64a">blog post</a> that goes over the exact process of getting to an API endpoint.</p>
+</section>
+<section id="architecture-1" class="level2">
+<h2 class="anchored" data-anchor-id="architecture-1">Architecture</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+title: Deploying Quantized LLM on Hugging Face
+---
+flowchart LR
+C(FastAPI Function for LLM completion) --&gt; D(Containerize our Application)
+D --&gt; E(Deploy via Hugging Face Spaces)
+E --&gt; F(Fast API Endpoint)
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="streamlit-application" class="level1">
+<h1>Streamlit Application</h1>
+<section id="deploying-streamlit-application-on-hugging-face-spaces" class="level2">
+<h2 class="anchored" data-anchor-id="deploying-streamlit-application-on-hugging-face-spaces">Deploying Streamlit Application on Hugging Face Spaces</h2>
+<p>I start with creating a new <a href="https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space">Streamlit Hugging Face Space</a>. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the <a href="https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py">app.py</a> file for more information.</p>
+</section>
+<section id="architecture-2" class="level2">
+<h2 class="anchored" data-anchor-id="architecture-2">Architecture</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+title: Streamlit Application on Hugging Space Spaces
+---
+flowchart LR
+
+D(Build App User Interface)
+D --&gt; B(Upload Flower Image)
+D --&gt; C(Load Image Recognition Model)
+B --&gt; C
+C --&gt; E{Identify Flower Species}
+E --&gt; N(Output Identified Flower Species)
+
+E --&gt; F(Pass Identified Label to LLM)
+F --&gt; G(Generate LLM Response)
+G --&gt; O(Ouput Response on Identified Flower Species)
+O --&gt; D
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="reference" class="level1">
+<h1>Reference</h1>
+<section id="model-tuning-image-recognition" class="level4">
+<h4 class="anchored" data-anchor-id="model-tuning-image-recognition">Model tuning | Image Recognition</h4>
+<ul>
+<li>My approach was insipred by this kaggle <a href="https://www.kaggle.com/code/hobaak/flowerdetector-oxford-102-flowers">notebook</a></li>
+</ul>
+</section>
+<section id="deploying-quantized-llm-on-hugging-face-generating-image-explanation-via-llm" class="level4">
+<h4 class="anchored" data-anchor-id="deploying-quantized-llm-on-hugging-face-generating-image-explanation-via-llm">Deploying Quantized LLM on Hugging Face | Generating Image Explanation via LLM</h4>
+<ul>
+<li>The <a href="https://gathnex.medium.com/how-to-deploy-llm-for-free-of-cost-6e7947d9b64a">blog post</a> that goes over the exact process of getting to an API endpoint</li>
+</ul>
 
 
 </section>
-</main></div>
+</section>
+
+</main> <!-- /main -->
+<div>
+    <hr>
+
+    <a href="https://www.buymeacoffee.com/niharikaba1"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a book&amp;emoji=📖&amp;slug=niharikaba1&amp;button_colour=5F7FFF&amp;font_colour=ffffff&amp;font_family=Poppins&amp;outline_colour=000000&amp;coffee_colour=FFDD00"></a>
+    <h4>Get Notified when Niharika Publishes!</h4>
+
+    <a href="https://medium.com/@niharikabalachandra">Follow Niharika on Medium</a>
+     
+   
+    <hr>
 </div>
- <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
@@ -226,6 +423,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
   toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
   const isCodeAnnotation = (el) => {
     for (const clz of el.classList) {
       if (clz.startsWith('code-annotation-')) {                     
@@ -585,6 +789,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 });
+</script>
+<script src="https://utteranc.es/client.js" repo="niharikabalachandra/blog_comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
 </script>
 </div> <!-- /content -->
 <footer class="footer">
