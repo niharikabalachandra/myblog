@@ -41,7 +41,7 @@
 <section id="deploying-on-hugging-face" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
 <p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
-<div id="2d6edf3c" class="cell" data-execution_count="1">
+<div id="e2007ab0" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
@@ -107,7 +107,7 @@ D --&gt; E(Load Model as needed)
 </div>
 </div>
 </div>
-<div id="fb689e38" class="cell" data-execution_count="2">
+<div id="6035f0f4" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
@@ -242,7 +242,7 @@ E --&gt; F(Fast API Endpoint)
 </div>
 </div>
 </div>
-<div id="f373adcd" class="cell" data-execution_count="3">
+<div id="c958a8eb" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><span class="im" style="color: #00769E;

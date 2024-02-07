@@ -82,5 +82,12 @@
     "title": "Niharika’s Blog",
     "section": "",
     "text": "Image Recognition Engine with GenAI Explanation\n\n\n\ncode\n\n\nanalysis\n\n\ndeploy\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nFeb 3, 2024\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/image_recognition/index.html",
+    "href": "posts/image_recognition/index.html",
+    "title": "Image Recognition Engine with GenAI Explanation",
+    "section": "",
+    "text": "The Deployed Application\n  Introduction: Unpacking the Application\n  Image Recognition\n  \n  Model Tuning\n  Deploying on Hugging Face\n  Architecture\n  \n  Generating Image Explanation via LLM\n  \n  Deploying Quantized LLM on Hugging Face\n  Architecture\n  \n  Streamlit Application\n  \n  Deploying Streamlit Application on Hugging Face Spaces\n  Architecture\n  \n  Reference"
   }
 ]

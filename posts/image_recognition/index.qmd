@@ -9,6 +9,9 @@ draft: false
 format:
   html:
     code-fold: true
+    toc: true
+    toc-location: left
+
 jupyter: python3
 ---
 

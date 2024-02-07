@@ -139,7 +139,7 @@ cookieconsent.run({
 <link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="floating nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -193,7 +193,7 @@ cookieconsent.run({
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
       <h1 class="title">Image Recognition Engine with GenAI Explanation</h1>
@@ -228,8 +228,37 @@ cookieconsent.run({
   
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-deployed-application" id="toc-the-deployed-application" class="nav-link active" data-scroll-target="#the-deployed-application">The Deployed Application</a></li>
+  <li><a href="#introduction-unpacking-the-application" id="toc-introduction-unpacking-the-application" class="nav-link" data-scroll-target="#introduction-unpacking-the-application">Introduction: Unpacking the Application</a></li>
+  <li><a href="#image-recognition" id="toc-image-recognition" class="nav-link" data-scroll-target="#image-recognition">Image Recognition</a>
+  <ul class="collapse">
+  <li><a href="#model-tuning" id="toc-model-tuning" class="nav-link" data-scroll-target="#model-tuning">Model Tuning</a></li>
+  <li><a href="#deploying-on-hugging-face" id="toc-deploying-on-hugging-face" class="nav-link" data-scroll-target="#deploying-on-hugging-face">Deploying on Hugging Face</a></li>
+  <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture">Architecture</a></li>
+  </ul></li>
+  <li><a href="#generating-image-explanation-via-llm" id="toc-generating-image-explanation-via-llm" class="nav-link" data-scroll-target="#generating-image-explanation-via-llm">Generating Image Explanation via LLM</a>
+  <ul class="collapse">
+  <li><a href="#deploying-quantized-llm-on-hugging-face" id="toc-deploying-quantized-llm-on-hugging-face" class="nav-link" data-scroll-target="#deploying-quantized-llm-on-hugging-face">Deploying Quantized LLM on Hugging Face</a></li>
+  <li><a href="#architecture-1" id="toc-architecture-1" class="nav-link" data-scroll-target="#architecture-1">Architecture</a></li>
+  </ul></li>
+  <li><a href="#streamlit-application" id="toc-streamlit-application" class="nav-link" data-scroll-target="#streamlit-application">Streamlit Application</a>
+  <ul class="collapse">
+  <li><a href="#deploying-streamlit-application-on-hugging-face-spaces" id="toc-deploying-streamlit-application-on-hugging-face-spaces" class="nav-link" data-scroll-target="#deploying-streamlit-application-on-hugging-face-spaces">Deploying Streamlit Application on Hugging Face Spaces</a></li>
+  <li><a href="#architecture-2" id="toc-architecture-2" class="nav-link" data-scroll-target="#architecture-2">Architecture</a></li>
+  </ul></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
 
@@ -257,7 +286,7 @@ cookieconsent.run({
 <section id="deploying-on-hugging-face" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
 <p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
-<div id="2d6edf3c" class="cell" data-execution_count="1">
+<div id="e2007ab0" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> huggingface_hub <span class="im">import</span> hf_hub_download</span>
@@ -305,7 +334,7 @@ D --&gt; E(Load Model as needed)
 </div>
 </div>
 </div>
-<div id="fb689e38" class="cell" data-execution_count="2">
+<div id="6035f0f4" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastai.vision.<span class="bu">all</span> <span class="im">import</span> <span class="op">*</span></span>
@@ -360,7 +389,7 @@ E --&gt; F(Fast API Endpoint)
 </div>
 </div>
 </div>
-<div id="f373adcd" class="cell" data-execution_count="3">
+<div id="c958a8eb" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
