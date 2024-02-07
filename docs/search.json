@@ -21,39 +21,25 @@
     "text": "Experience\nSkai.io (formerly Kenshoo Inc.) | Data Science Manager | Mar 2019 - present\nPublicis Sapient | Associate Data Scientist | Aug 2017 - Mar 2019"
   },
   {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I’ve led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.\nBut, let’s make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.\nExpect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!\nIf this labor of love enriches your life, please consider supporting it with a donation. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Niharika’s Blog",
-    "section": "",
-    "text": "Image Recognition Engine with GenAI Explanation\n\n\n\ncode\n\n\nanalysis\n\n\ndeploy\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nFeb 3, 2024\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\nNo matching items"
-  },
-  {
     "objectID": "posts/image_recognition/index.html#model-tuning",
     "href": "posts/image_recognition/index.html#model-tuning",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Model Tuning",
-    "text": "Model Tuning\nThe idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there a host of other pre-trained vision models you can find via pytorch-image-models or timm. The easiest way to fine tune the Resnet50 pre-trained model is using the fastai library. Here is the notebook I used to generate a pickled version of the finetuned model."
+    "text": "Model Tuning\nThe idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there are a host of other pre-trained vision models you can find via pytorch-image-models or timm. The easiest way to fine tune the Resnet50 pre-trained model is using the fastai library. Here is the notebook I used to generate a pickled version of the fine-tuned model."
   },
   {
     "objectID": "posts/image_recognition/index.html#deploying-on-hugging-face",
     "href": "posts/image_recognition/index.html#deploying-on-hugging-face",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Deploying on Hugging Face",
-    "text": "Deploying on Hugging Face\nWe now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to hugging face is really simple via the UI and this doc walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.\n\n\nCode\nfrom huggingface_hub import hf_hub_download\n\nREPO_ID = \"username/huggingface_repo\"\nFILENAME = \"export.pkl\"\n\nmodel_file_name = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)"
+    "text": "Deploying on Hugging Face\nWe now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this doc walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.\n\n\nCode\nfrom huggingface_hub import hf_hub_download\n\nREPO_ID = \"username/huggingface_repo\"\nFILENAME = \"export.pkl\"\n\nmodel_file_name = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)"
   },
   {
     "objectID": "posts/image_recognition/index.html#architecture",
     "href": "posts/image_recognition/index.html#architecture",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Architecture",
-    "text": "Architecture\n\n\n\n\n\n---\ntitle: Model Fine-tuning\n---\nflowchart LR\n  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Indentification of Flowers)\n  B --&gt; C(Serialized Model)\n\n\n\n\n\n\n\n\n\n\n\n---\ntitle: Deploying Model on Hugging Face \n---\nflowchart LR\n C(Serialized Fine-tuned Model) --&gt; D(Host Serialized Model on Hugging Face)\nD --&gt; E(Load Model as needed)"
+    "text": "Architecture\n\n\n\n\n\n---\ntitle: Model Fine-tuning\n---\nflowchart LR\n  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Identification of Flowers)\n  B --&gt; C(Serialized Model)\n\n\n\n\n\n\n\n\n\n\n\n---\ntitle: Deploying Model on Hugging Face \n---\nflowchart LR\n C(Serialized Fine-tuned Model) --&gt; D(Host Serialized Model on Hugging Face)\nD --&gt; E(Load Model as needed)"
   },
   {
     "objectID": "posts/image_recognition/index.html#deploying-quantized-llm-on-hugging-face",
@@ -82,5 +68,19 @@
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Architecture",
     "text": "Architecture\n\n\n\n\n\n---\ntitle: Streamlit Application on Hugging Space Spaces\n---\nflowchart LR\n\nD(Build App User Interface)\nD --&gt; B(Upload Flower Image)\nD --&gt; C(Load Image Recognition Model)\nB --&gt; C\nC --&gt; E{Identify Flower Species}\nE --&gt; N(Output Identified Flower Species)\n\nE --&gt; F(Pass Identified Label to LLM)\nF --&gt; G(Generate LLM Response)\nG --&gt; O(Ouput Response on Identified Flower Species)\nO --&gt; D"
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I’ve led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.\nBut, let’s make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.\nExpect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!\nIf this labor of love enriches your life, please consider supporting it with a donation. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Niharika’s Blog",
+    "section": "",
+    "text": "Image Recognition Engine with GenAI Explanation\n\n\n\ncode\n\n\nanalysis\n\n\ndeploy\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nFeb 3, 2024\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\nNiharika Balachandra\n\n\nJan 28, 2024\n\n\n\n\n\n\n\n\nNo matching items"
   }
 ]

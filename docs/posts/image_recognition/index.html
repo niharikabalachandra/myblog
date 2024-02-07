@@ -252,12 +252,12 @@ cookieconsent.run({
 <h1>Image Recognition</h1>
 <section id="model-tuning" class="level2">
 <h2 class="anchored" data-anchor-id="model-tuning">Model Tuning</h2>
-<p>The idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there a host of other pre-trained vision models you can find via <a href="https://github.com/huggingface/pytorch-image-models?tab=readme-ov-file#models">pytorch-image-models or timm</a>. The easiest way to fine tune the Resnet50 pre-trained model is using the <a href="https://timm.fast.ai/#Fine-tune-timm-model-in-fastai">fastai library</a>. Here is the <a href="https://www.kaggle.com/code/niharikabalachandra/flowerdetector-oxford-102-flowers">notebook</a> I used to generate a pickled version of the finetuned model.</p>
+<p>The idea is to use transfer learning to fine tune a pre-trained vision model. I use the Resnet50 pre-trained model for this project but there are a host of other pre-trained vision models you can find via <a href="https://github.com/huggingface/pytorch-image-models?tab=readme-ov-file#models">pytorch-image-models or timm</a>. The easiest way to fine tune the Resnet50 pre-trained model is using the <a href="https://timm.fast.ai/#Fine-tune-timm-model-in-fastai">fastai library</a>. Here is the <a href="https://www.kaggle.com/code/niharikabalachandra/flowerdetector-oxford-102-flowers">notebook</a> I used to generate a pickled version of the fine-tuned model.</p>
 </section>
 <section id="deploying-on-hugging-face" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
-<p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to hugging face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
-<div id="8088deb7" class="cell" data-execution_count="1">
+<p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
+<div id="72d38286" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> huggingface_hub <span class="im">import</span> hf_hub_download</span>
@@ -280,7 +280,7 @@ cookieconsent.run({
 title: Model Fine-tuning
 ---
 flowchart LR
-  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Indentification of Flowers)
+  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Identification of Flowers)
   B --&gt; C(Serialized Model)
 </pre>
 </div>
@@ -378,7 +378,7 @@ O --&gt; D
 <section id="model-tuning-image-recognition" class="level4">
 <h4 class="anchored" data-anchor-id="model-tuning-image-recognition">Model tuning | Image Recognition</h4>
 <ul>
-<li>My approach was insipred by this kaggle <a href="https://www.kaggle.com/code/hobaak/flowerdetector-oxford-102-flowers">notebook</a></li>
+<li>My approach was inspired by this kaggle <a href="https://www.kaggle.com/code/hobaak/flowerdetector-oxford-102-flowers">notebook</a></li>
 </ul>
 </section>
 <section id="deploying-quantized-llm-on-hugging-face-generating-image-explanation-via-llm" class="level4">
