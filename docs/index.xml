@@ -41,7 +41,7 @@
 <section id="deploying-on-hugging-face" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
 <p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
-<div id="20767d9e" class="cell" data-execution_count="1">
+<div id="2d6edf3c" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
@@ -107,7 +107,7 @@ D --&gt; E(Load Model as needed)
 </div>
 </div>
 </div>
-<div id="d065f606" class="cell" data-execution_count="2">
+<div id="fb689e38" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
@@ -242,7 +242,7 @@ E --&gt; F(Fast API Endpoint)
 </div>
 </div>
 </div>
-<div id="6ba8c631" class="cell" data-execution_count="3">
+<div id="f373adcd" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><span class="im" style="color: #00769E;
@@ -359,7 +359,7 @@ font-style: inherit;">'</span>)</span></code></pre></div>
 <h1>Streamlit Application</h1>
 <section id="deploying-streamlit-application-on-hugging-face-spaces" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-streamlit-application-on-hugging-face-spaces">Deploying Streamlit Application on Hugging Face Spaces</h2>
-<p>I start with creating a new <a href="https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space">Streamlit Hugging Face Space</a>. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the <a href="https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py">app.py</a> file for more information on how everything was stitched together in an application</p>
+<p>I start with creating a new <a href="https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space">Streamlit Hugging Face Space</a>. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the <a href="https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py">app.py</a> file for more information on how everything was stitched together in an application.</p>
 </section>
 <section id="architecture-2" class="level2">
 <h2 class="anchored" data-anchor-id="architecture-2">Architecture</h2>

@@ -149,7 +149,7 @@ except Exception as e:
 
 # Streamlit Application 
 ## Deploying Streamlit Application on Hugging Face Spaces
-I start with creating a new [Streamlit Hugging Face Space](https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space). I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the [app.py](https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py) file for more information on how everything was stitched together in an application
+I start with creating a new [Streamlit Hugging Face Space](https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space). I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the [app.py](https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py) file for more information on how everything was stitched together in an application.
 
 ## Architecture
 

@@ -60,7 +60,7 @@
     "href": "posts/image_recognition/index.html#deploying-streamlit-application-on-hugging-face-spaces",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Deploying Streamlit Application on Hugging Face Spaces",
-    "text": "Deploying Streamlit Application on Hugging Face Spaces\nI start with creating a new Streamlit Hugging Face Space. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the app.py file for more information on how everything was stitched together in an application"
+    "text": "Deploying Streamlit Application on Hugging Face Spaces\nI start with creating a new Streamlit Hugging Face Space. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the app.py file for more information on how everything was stitched together in an application."
   },
   {
     "objectID": "posts/image_recognition/index.html#architecture-2",
