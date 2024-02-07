@@ -39,7 +39,7 @@
     "href": "posts/image_recognition/index.html#architecture",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Architecture",
-    "text": "Architecture\n\n\n\n\n\n---\ntitle: Model Fine-tuning\n---\nflowchart LR\n  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Identification of Flowers)\n  B --&gt; C(Serialized Model)\n\n\n\n\n\n\n\n\n\n\n\n---\ntitle: Deploying Model on Hugging Face \n---\nflowchart LR\n C(Serialized Fine-tuned Model) --&gt; D(Host Serialized Model on Hugging Face)\nD --&gt; E(Load Model as needed)"
+    "text": "Architecture\n\n\n\n\n\n---\ntitle: Model Fine-tuning\n---\nflowchart LR\n  A(Resnet50 Pre-trained Model) --&gt; B(Fine-tuned for Identification of Flowers)\n  B --&gt; C(Serialized Model)\n\n\n\n\n\n\n\n\n\n\n\n---\ntitle: Deploying Model on Hugging Face \n---\nflowchart LR\n C(Serialized Fine-tuned Model) --&gt; D(Host Serialized Model on Hugging Face)\nD --&gt; E(Load Model as needed)\n\n\n\n\n\n\n\n\nCode\nfrom fastai.vision.all import *\nfrom huggingface_hub import hf_hub_download\n\nREPO_ID = \"&lt;hugging_face_repo_hosting_fine-tuned_model&gt;\"\nFILENAME = \"export.pkl\"\n\nmodel_file_name = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)\nlearn_inf = load_learner(model_file_name)\nlabels = learn_inf.dls.vocab\n\ndef predict(img):\n    img = PILImage.create(img)\n    pred,pred_idx,probs = learn_inf.predict(img)\n    dict_ = {labels[i]: float(probs[i]) for i in range(len(labels))}\n    dict_ = dict(sorted(dict_.items(), key=lambda x: x[1], reverse=True))\n    best_class = list(dict_.keys())[0]\n    return dict_ , best_class\n\nimage = PILImage.create(file_name)\ncol1.image(image, use_column_width=True)\npredictions, best_class = predict(image)"
   },
   {
     "objectID": "posts/image_recognition/index.html#deploying-quantized-llm-on-hugging-face",
@@ -53,14 +53,14 @@
     "href": "posts/image_recognition/index.html#architecture-1",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Architecture",
-    "text": "Architecture\n\n\n\n\n\n---\ntitle: Deploying Quantized LLM on Hugging Face\n---\nflowchart LR\nC(FastAPI Function for LLM completion) --&gt; D(Containerize our Application)\nD --&gt; E(Deploy via Hugging Face Spaces)\nE --&gt; F(Fast API Endpoint)"
+    "text": "Architecture\n\n\n\n\n\n---\ntitle: Deploying Quantized LLM on Hugging Face\n---\nflowchart LR\nC(FastAPI Function for LLM completion) --&gt; D(Containerize our Application)\nD --&gt; E(Deploy via Hugging Face Spaces)\nE --&gt; F(Fast API Endpoint)\n\n\n\n\n\n\n\n\nCode\nimport requests\nimport os\n\n# hugging_face_token_with_read_access is stored as a hugging face secret\nHF_TOKEN = os.environ.get('&lt;hugging_face_token_with_read_access&gt;')\nbest_class = '&lt;identified_image_label&gt;'\nAPI_URL = \"&lt;API_endpoint_of_hugging-face_hosted_LLM-model&gt;\"\n\nrequest_auth = f'Bearer {HF_TOKEN}' \nheaders = {\n    'accept': 'application/json',\n    'Content-Type': 'application/json',\n    'Authorization': request_auth\n}\njson_data = {\n    'prompt': f'what is a {best_class} in 2 sentences?'\n}\n\nresponse = requests.post(\n    API_URL,\n    headers=headers,\n    json=json_data,\n)\n\ntry:\n    respose_txt = response.json()\nexcept Exception as e:\n    print(f'Error details: {e}')"
   },
   {
     "objectID": "posts/image_recognition/index.html#deploying-streamlit-application-on-hugging-face-spaces",
     "href": "posts/image_recognition/index.html#deploying-streamlit-application-on-hugging-face-spaces",
     "title": "Image Recognition Engine with GenAI Explanation",
     "section": "Deploying Streamlit Application on Hugging Face Spaces",
-    "text": "Deploying Streamlit Application on Hugging Face Spaces\nI start with creating a new Streamlit Hugging Face Space. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the app.py file for more information."
+    "text": "Deploying Streamlit Application on Hugging Face Spaces\nI start with creating a new Streamlit Hugging Face Space. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the app.py file for more information on how everything was stitched together in an application"
   },
   {
     "objectID": "posts/image_recognition/index.html#architecture-2",

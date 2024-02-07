@@ -69,6 +69,32 @@ flowchart LR
 D --> E(Load Model as needed)
 ```
 
+```{python}
+#| output: false
+#| eval: false
+from fastai.vision.all import *
+from huggingface_hub import hf_hub_download
+
+REPO_ID = "<hugging_face_repo_hosting_fine-tuned_model>"
+FILENAME = "export.pkl"
+
+model_file_name = hf_hub_download(repo_id=REPO_ID, filename=FILENAME)
+learn_inf = load_learner(model_file_name)
+labels = learn_inf.dls.vocab
+
+def predict(img):
+    img = PILImage.create(img)
+    pred,pred_idx,probs = learn_inf.predict(img)
+    dict_ = {labels[i]: float(probs[i]) for i in range(len(labels))}
+    dict_ = dict(sorted(dict_.items(), key=lambda x: x[1], reverse=True))
+    best_class = list(dict_.keys())[0]
+    return dict_ , best_class
+
+image = PILImage.create(file_name)
+col1.image(image, use_column_width=True)
+predictions, best_class = predict(image)
+```
+
 # Generating Image Explanation via LLM
 
 ## Deploying Quantized LLM on Hugging Face
@@ -88,10 +114,42 @@ D --> E(Deploy via Hugging Face Spaces)
 E --> F(Fast API Endpoint)
 ```
 
+```{python}
+#| output: false
+#| eval: false
+import requests
+import os
+
+# hugging_face_token_with_read_access is stored as a hugging face secret
+HF_TOKEN = os.environ.get('<hugging_face_token_with_read_access>')
+best_class = '<identified_image_label>'
+API_URL = "<API_endpoint_of_hugging-face_hosted_LLM-model>"
+
+request_auth = f'Bearer {HF_TOKEN}' 
+headers = {
+    'accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': request_auth
+}
+json_data = {
+    'prompt': f'what is a {best_class} in 2 sentences?'
+}
+
+response = requests.post(
+    API_URL,
+    headers=headers,
+    json=json_data,
+)
+
+try:
+    respose_txt = response.json()
+except Exception as e:
+    print(f'Error details: {e}')
+```
 
 # Streamlit Application 
 ## Deploying Streamlit Application on Hugging Face Spaces
-I start with creating a new [Streamlit Hugging Face Space](https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space). I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the [app.py](https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py) file for more information. 
+I start with creating a new [Streamlit Hugging Face Space](https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space). I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the [app.py](https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py) file for more information on how everything was stitched together in an application
 
 ## Architecture
 
@@ -113,8 +171,6 @@ F --> G(Generate LLM Response)
 G --> O(Ouput Response on Identified Flower Species)
 O --> D
 ```
-
-
 
 # Reference
 #### Model tuning | Image Recognition

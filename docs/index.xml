@@ -5,7 +5,7 @@
       xmlns:dc="http://purl.org/dc/elements/1.1/" 
       version="2.0">
 <channel>
-<title>My Blog</title>
+<title>Niharika&#39;s blog</title>
 <link>https://www.niharikabalachandra.com/</link>
 <atom:link href="https://www.niharikabalachandra.com/index.xml" rel="self" type="application/rss+xml"/>
 <description>Niharika&#39;s blog where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future. </description>
@@ -41,7 +41,7 @@
 <section id="deploying-on-hugging-face" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-on-hugging-face">Deploying on Hugging Face</h2>
 <p>We now needed to host this serialized model on Hugging Face and interact with it via the huggingface_hub python library. Uploading a model to Hugging Face is really simple via the UI and this <a href="https://huggingface.co/docs/hub/en/models-uploading#using-the-web-interface">doc</a> walks though the process in detail. The following code can then be used to load this hosted model into memory so we can build the app around it.</p>
-<div id="72d38286" class="cell" data-execution_count="1">
+<div id="20767d9e" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
@@ -107,6 +107,112 @@ D --&gt; E(Load Model as needed)
 </div>
 </div>
 </div>
+<div id="d065f606" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> fastai.vision.<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">all</span> <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span></span>
+<span id="cb2-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> huggingface_hub <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> hf_hub_download</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">REPO_ID <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"&lt;hugging_face_repo_hosting_fine-tuned_model&gt;"</span></span>
+<span id="cb2-5">FILENAME <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"export.pkl"</span></span>
+<span id="cb2-6"></span>
+<span id="cb2-7">model_file_name <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> hf_hub_download(repo_id<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>REPO_ID, filename<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>FILENAME)</span>
+<span id="cb2-8">learn_inf <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> load_learner(model_file_name)</span>
+<span id="cb2-9">labels <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> learn_inf.dls.vocab</span>
+<span id="cb2-10"></span>
+<span id="cb2-11"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">def</span> predict(img):</span>
+<span id="cb2-12">    img <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> PILImage.create(img)</span>
+<span id="cb2-13">    pred,pred_idx,probs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> learn_inf.predict(img)</span>
+<span id="cb2-14">    dict_ <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {labels[i]: <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">float</span>(probs[i]) <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">len</span>(labels))}</span>
+<span id="cb2-15">    dict_ <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">dict</span>(<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">sorted</span>(dict_.items(), key<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">lambda</span> x: x[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>], reverse<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span>))</span>
+<span id="cb2-16">    best_class <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>(dict_.keys())[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]</span>
+<span id="cb2-17">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">return</span> dict_ , best_class</span>
+<span id="cb2-18"></span>
+<span id="cb2-19">image <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> PILImage.create(file_name)</span>
+<span id="cb2-20">col1.image(image, use_column_width<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span>)</span>
+<span id="cb2-21">predictions, best_class <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> predict(image)</span></code></pre></div>
+</details>
+</div>
 </section>
 </section>
 <section id="generating-image-explanation-via-llm" class="level1">
@@ -136,13 +242,124 @@ E --&gt; F(Fast API Endpoint)
 </div>
 </div>
 </div>
+<div id="6ba8c631" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb3-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> os</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># hugging_face_token_with_read_access is stored as a hugging face secret</span></span>
+<span id="cb3-5">HF_TOKEN <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> os.environ.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&lt;hugging_face_token_with_read_access&gt;'</span>)</span>
+<span id="cb3-6">best_class <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&lt;identified_image_label&gt;'</span></span>
+<span id="cb3-7">API_URL <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"&lt;API_endpoint_of_hugging-face_hosted_LLM-model&gt;"</span></span>
+<span id="cb3-8"></span>
+<span id="cb3-9">request_auth <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f'Bearer </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>HF_TOKEN<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'</span> </span>
+<span id="cb3-10">headers <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {</span>
+<span id="cb3-11">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'accept'</span>: <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'application/json'</span>,</span>
+<span id="cb3-12">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Content-Type'</span>: <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'application/json'</span>,</span>
+<span id="cb3-13">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Authorization'</span>: request_auth</span>
+<span id="cb3-14">}</span>
+<span id="cb3-15">json_data <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {</span>
+<span id="cb3-16">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'prompt'</span>: <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f'what is a </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>best_class<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;"> in 2 sentences?'</span></span>
+<span id="cb3-17">}</span>
+<span id="cb3-18"></span>
+<span id="cb3-19">response <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.post(</span>
+<span id="cb3-20">    API_URL,</span>
+<span id="cb3-21">    headers<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>headers,</span>
+<span id="cb3-22">    json<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>json_data,</span>
+<span id="cb3-23">)</span>
+<span id="cb3-24"></span>
+<span id="cb3-25"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">try</span>:</span>
+<span id="cb3-26">    respose_txt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> response.json()</span>
+<span id="cb3-27"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">except</span> <span class="pp" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Exception</span> <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> e:</span>
+<span id="cb3-28">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f'Error details: </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>e<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'</span>)</span></code></pre></div>
+</details>
+</div>
 </section>
 </section>
 <section id="streamlit-application" class="level1">
 <h1>Streamlit Application</h1>
 <section id="deploying-streamlit-application-on-hugging-face-spaces" class="level2">
 <h2 class="anchored" data-anchor-id="deploying-streamlit-application-on-hugging-face-spaces">Deploying Streamlit Application on Hugging Face Spaces</h2>
-<p>I start with creating a new <a href="https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space">Streamlit Hugging Face Space</a>. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the <a href="https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py">app.py</a> file for more information.</p>
+<p>I start with creating a new <a href="https://huggingface.co/docs/hub/en/spaces-sdks-streamlit#create-a-new-streamlit-space">Streamlit Hugging Face Space</a>. I then build the streamlit app that integrates all the 3 components: load in the image recognition model, build out the interface to upload images and display results and finally to pass the prediction via a prompt to generate a high-level explanation of the flower species identified. You can refer to the <a href="https://huggingface.co/spaces/niharikabalachandra/find_and_explain_flowers_streamlit/blob/main/app.py">app.py</a> file for more information on how everything was stitched together in an application</p>
 </section>
 <section id="architecture-2" class="level2">
 <h2 class="anchored" data-anchor-id="architecture-2">Architecture</h2>
