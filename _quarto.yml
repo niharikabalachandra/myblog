@@ -20,7 +20,8 @@ website:
         href: https://www.buymeacoffee.com/niharikaba1
       - icon: rss
         href: index.xml 
-page-footer: "Hit [Subscibe](https://forms.gle/N2jdPamTAhdbfDUC7)
+  page-footer: 
+    left: "Copyright 2024, Niharika Balachandra" 
 format:
   html:
     theme: cosmo
