@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.549">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Niharika Balachandra">
+<meta name="dcterms.date" content="2026-07-29">
+
+<title>Niharika’s blog - Building a Reliable Auto-Backup for Claude Code Sessions Without External Dependencies</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/cookie-consent/cookie-consent.js"></script>
+<link href="../../site_libs/cookie-consent/cookie-consent.css" rel="stylesheet">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/quarto-contrib/social-share-1.0.0/social-share.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/social-share-1.0.0/all.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-HW7V68ZHXG"></script>
+
+<script type="text/plain" cookie-consent="tracking">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-HW7V68ZHXG', { 'anonymize_ip': true});
+</script>
+
+<script type="text/javascript" charset="UTF-8">
+document.addEventListener('DOMContentLoaded', function () {
+cookieconsent.run({
+  "notice_banner_type":"simple",
+  "consent_type":"implied",
+  "palette":"light",
+  "language":"en",
+  "page_load_consent_levels":["strictly-necessary","functionality","tracking","targeting"],
+  "notice_banner_reject_button_hide":false,
+  "preferences_center_close_button_hide":false,
+  "website_name":""
+  ,
+"language":"en"
+  });
+});
+</script> 
+  
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Niharika’s blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Niharika Balachandra</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/niharikabalachandra"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/niharikabalachandra/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://medium.com/@niharikabalachandra"> <i class="bi bi-medium" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.buymeacoffee.com/niharikaba1"> <i class="bi bi-bi bi-gift" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://forms.gle/YD4DNxqgQmw5fbGR9"> <i class="bi bi-bell" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Building a Reliable Auto-Backup for Claude Code Sessions Without External Dependencies</h1>
+                                <div class="quarto-categories">
+                <div class="quarto-category">code</div>
+                <div class="quarto-category">tools</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Niharika Balachandra </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">July 29, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-compaction-actually-does" id="toc-what-compaction-actually-does" class="nav-link active" data-scroll-target="#what-compaction-actually-does">What compaction actually does</a></li>
+  <li><a href="#layer-1-the-status-line-as-an-instrument" id="toc-layer-1-the-status-line-as-an-instrument" class="nav-link" data-scroll-target="#layer-1-the-status-line-as-an-instrument">Layer 1: the status line as an instrument</a></li>
+  <li><a href="#the-budget-math-and-why-used_percentage-misleads" id="toc-the-budget-math-and-why-used_percentage-misleads" class="nav-link" data-scroll-target="#the-budget-math-and-why-used_percentage-misleads">The budget math, and why <code>used_percentage</code> misleads</a></li>
+  <li><a href="#layer-2-precompact-as-the-backstop" id="toc-layer-2-precompact-as-the-backstop" class="nav-link" data-scroll-target="#layer-2-precompact-as-the-backstop">Layer 2: PreCompact as the backstop</a></li>
+  <li><a href="#where-to-register-it" id="toc-where-to-register-it" class="nav-link" data-scroll-target="#where-to-register-it">Where to register it</a></li>
+  <li><a href="#what-this-is-like-to-use" id="toc-what-this-is-like-to-use" class="nav-link" data-scroll-target="#what-this-is-like-to-use">What this is like to use</a></li>
+  <li><a href="#the-audit-trail" id="toc-the-audit-trail" class="nav-link" data-scroll-target="#the-audit-trail">The audit trail</a></li>
+  <li><a href="#caveats" id="toc-caveats" class="nav-link" data-scroll-target="#caveats">Caveats</a></li>
+  <li><a href="#what-this-doesnt-solve" id="toc-what-this-doesnt-solve" class="nav-link" data-scroll-target="#what-this-doesnt-solve">What this doesn’t solve</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+<div class="page-columns page-rows-contents page-layout-article"><div class="social-share"><a href="https://x.com/intent/post?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;text=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="twitter"><i class="fa-brands fa-x-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;title=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most.&amp;body=Check out this link:https://niharikabalachandra.com/posts/auto-saving-claude-code/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://niharikabalachandra.com/posts/auto-saving-claude-code/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;title=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a></div></div>
+
+
+
+
+
+<p>Git records what you decided. It says nothing about what you rejected.</p>
+<p>That asymmetry is fine for code written by hand, where the alternatives never left your head anyway. It’s a real loss for code written across a long agent session, because the reasoning trail is substantial: the approach that looked right for twenty minutes before a constraint killed it, the library you evaluated and dropped, the three failure modes you found and designed around. That work happened. It shaped the code. And it lives in exactly one place — the conversation.</p>
+<p>Then the context window fills, auto-compaction fires, and the conversation becomes a few hundred tokens of summary.</p>
+<p>Below is a two-layer system that archives the raw transcript automatically: no daemon, no database, no service to keep running, nothing to install but <code>jq</code>. Layer 1 is opportunistic — a status line that checkpoints in the background once you cross a threshold. Layer 2 is guaranteed — a hook that fires exactly once, right before compaction, regardless of what layer 1 did.</p>
+<section id="what-compaction-actually-does" class="level1">
+<h1>What compaction actually does</h1>
+<p>Compaction compresses what the <em>model</em> sees. It does not delete anything on disk.</p>
+<p>Claude Code writes every session to plaintext JSONL at <code>~/.claude/projects/&lt;encoded-cwd&gt;/&lt;session-id&gt;.jsonl</code> — one JSON event per line, covering prompts, responses, and every tool call. That file keeps growing straight through a compaction event. <code>/resume</code> and <code>/export</code> both read from it.</p>
+<p>Worth being precise about, because it changes what problem you’re solving. You are not rescuing data from deletion. You are fixing four narrower things:</p>
+<ol type="1">
+<li><strong>Retention is 30 days by default.</strong> <code>cleanupPeriodDays</code> defaults to 30, cleanup runs at startup, and deletion is a hard <code>unlink()</code> — no trash, no warning, no recovery.</li>
+<li><strong>Storage is keyed by encoded working directory in a global folder.</strong> Move or rename the project and the association breaks.</li>
+<li><strong>Compaction boundaries aren’t marked.</strong> Nothing in the raw file tells you where the agent’s working memory got flattened — which is precisely the point you want to inspect when it starts relitigating a question it had already settled.</li>
+<li><strong><code>/export</code> is manual, one session at a time.</strong> That does not survive contact with a real week.</li>
+</ol>
+<p>The goal is converting a volatile, path-keyed, 30-day cache into a durable, project-local, annotated, greppable record.</p>
+</section>
+<section id="layer-1-the-status-line-as-an-instrument" class="level1">
+<h1>Layer 1: the status line as an instrument</h1>
+<p>Claude Code’s <code>statusLine</code> runs a shell command and renders its first line of stdout at the bottom of the terminal. It re-runs whenever conversation messages update — throttled to at most every 300ms — and a <code>refreshInterval</code> can re-run it on a timer as well. It receives a JSON payload on stdin containing <code>session_id</code>, <code>transcript_path</code>, <code>model</code>, <code>workspace</code>, and a <code>context_window</code> object with token counts.</p>
+<p>That’s a fill gauge <em>and</em> a trigger that already has the transcript path in hand. So the status line does two jobs: it shows you where you are, and past a threshold it starts checkpointing in the background.</p>
+<p>Mine fires at 80% of the real compact budget, throttled to once per five minutes per session, with a lockfile so concurrent invocations don’t interleave writes.</p>
+<p>Two implementation details that cost me time. Anything the script prints to stdout <em>becomes</em> your status line, so background the backup and discard its output. And the throttle needs a lockfile rather than a timestamp check — the status line can re-enter faster than a backup completes.</p>
+</section>
+<section id="the-budget-math-and-why-used_percentage-misleads" class="level1">
+<h1>The budget math, and why <code>used_percentage</code> misleads</h1>
+<p>The payload includes <code>context_window.used_percentage</code>, which is the obvious field to threshold on. On my setup it consistently disagrees with the “% until auto-compact” indicator in the UI, and it disagrees in the dangerous direction: it reads low.</p>
+<p>The reason appears to be that auto-compaction doesn’t wait for the window to fill. It triggers at roughly 84% of the window, reserving the remainder for the compaction pass itself. <code>used_percentage</code> is computed against the <em>full</em> window, so it measures the wrong denominator.</p>
+<p>The correction is a division:</p>
+<pre><code>budget_used = (cache_read_input_tokens
+             + cache_creation_input_tokens
+             + input_tokens)
+             / (context_window_size * 0.84) * 100</code></pre>
+<p>The important part is that this is a <em>multiplicative</em> factor, not a fixed offset. The gap widens as you fill, and it is widest exactly where being wrong costs the most:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th><code>used_percentage</code> reads</th>
+<th>Actual budget consumed</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>40%</td>
+<td>48%</td>
+<td>8pp</td>
+</tr>
+<tr class="even">
+<td>60%</td>
+<td>71%</td>
+<td>11pp</td>
+</tr>
+<tr class="odd">
+<td>78%</td>
+<td>93%</td>
+<td>15pp</td>
+</tr>
+<tr class="even">
+<td>84%</td>
+<td>100% — compaction fires</td>
+<td>16pp</td>
+</tr>
+</tbody>
+</table>
+<p>At 78% you feel like you have a fifth of the session left. You have about 7%. That misread is what makes a naive threshold fire after compaction rather than before it.</p>
+</section>
+<section id="layer-2-precompact-as-the-backstop" class="level1">
+<h1>Layer 2: PreCompact as the backstop</h1>
+<p>The status line is opportunistic. It only runs when messages update, and it’s throttled. A single large tool result can consume the remaining budget between two invocations.</p>
+<p>The guarantee comes from the <code>PreCompact</code> hook, which fires immediately before compaction and receives the same <code>session_id</code> and <code>transcript_path</code> on stdin. No throttle, synchronous, one job. Its matcher distinguishes <code>auto</code> (the window filled) from <code>manual</code> (you ran <code>/compact</code>).</p>
+<p>Neither layer is load-bearing alone. That’s the design: two independent triggers with different failure modes, writing through one shared, idempotent writer.</p>
+<p>Backups land in <code>claude_chat_backup/auto_backup_&lt;timestamp&gt;_&lt;session_short&gt;.jsonl</code>. Keying on the session ID is not cosmetic — run three agents against one repo and timestamped filenames collide under concurrency, interleaving three conversations into noise.</p>
+</section>
+<section id="where-to-register-it" class="level1">
+<h1>Where to register it</h1>
+<p>Hooks go in a settings JSON file, not <code>CLAUDE.md</code>. Memory files are instructions loaded into the model’s context; a model <em>asked</em> to back up your transcript usually will, which is not the same as it always happening. Hooks are deterministic. That’s the point.</p>
+<p>The documented scopes are:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>~/.claude/settings.json</code></td>
+<td>user, all projects</td>
+</tr>
+<tr class="even">
+<td><code>.claude/settings.json</code></td>
+<td>project, committed</td>
+</tr>
+<tr class="odd">
+<td><code>.claude/settings.local.json</code></td>
+<td>project, gitignored</td>
+</tr>
+</tbody>
+</table>
+<p>Claude Code validates these strictly, which is why unknown keys disappear rather than erroring — useful to know before you spend an hour debugging a hook that never fires.</p>
+<p>Verify where yours actually loaded from. Run <code>/status</code> and read the “Setting sources” line, then <code>/hooks</code>, which lists every registered hook and the file it came from. A hook in an unrecognized scope doesn’t warn you. It silently isn’t there, and you find out on the day you needed it.</p>
+</section>
+<section id="what-this-is-like-to-use" class="level1">
+<h1>What this is like to use</h1>
+<p>The backup layer is invisible, which is correct. You notice it twice: once when you set it up, and once weeks later when you need something out of it.</p>
+<p>The status line is the part you interact with, and it changed how I work more than the archive did. A fill gauge turns an invisible resource into a visible one, and visible resources get budgeted. You stop opening a large exploratory question at 70%. You start a fresh session for the unrelated tangent instead of paying for it out of the current window. When the bar goes amber you wrap the current thread rather than starting a new one and losing it mid-flight.</p>
+<p>None of that requires the backups. It’s a second-order benefit of instrumenting the resource at all, and it may be the larger one.</p>
+</section>
+<section id="the-audit-trail" class="level1">
+<h1>The audit trail</h1>
+<p>Weeks out, the question is rarely “what does this code do.” It’s “why is it like this.”</p>
+<p>Git answers a narrow version. The commit shows the final shape; the message shows what you thought was worth writing down at the time. Neither captures the two hours where you established that the obvious approach deadlocks under concurrent writes — the reason the non-obvious approach exists at all.</p>
+<p>An archived transcript answers it directly, and the queries are boring in a good way. This one searches every prompt in every backed-up session for a keyword, so you can find the conversation that touched a topic without remembering which session it was in:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># every prompt across every session touching a topic</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">jq</span> <span class="at">-r</span> <span class="st">'select(.type == "user")</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">       | [.timestamp,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">          (.message.content</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">           | if type == "string" then .</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">             else (map(.text? // "") | join(" ")) end)]</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">       | @tsv'</span> claude_chat_backup/<span class="pp">*</span>.jsonl <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> <span class="st">"idempotency"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Three uses that have earned their keep:</p>
+<p><strong>Reconstructing a decision.</strong> Find where a design turned, read the surrounding twenty exchanges, recover the constraint you’d forgotten. This is the one I expected.</p>
+<p><strong>Recovering rejected work.</strong> Agents produce a lot of code that gets discarded for reasons that later stop applying. That code is in the transcript, and it’s often a better starting point than writing it again.</p>
+<p><strong>Auditing the agent, not just the output.</strong> Reading a long session end to end shows you where it drifted, where it over-claimed, where it quietly dropped a requirement. That’s a different signal from reviewing the diff, and it’s the one that improves how you prompt.</p>
+<p>Log the compaction points alongside the transcript and you get one more thing: a marker for where the agent’s working memory was flattened. When a session goes sideways, that boundary is usually near the cause.</p>
+</section>
+<section id="caveats" class="level1">
+<h1>Caveats</h1>
+<p><strong>Never set <code>cleanupPeriodDays: 0</code>.</strong> The documented meaning is “disable cleanup,” but it has been reported to disable transcript persistence entirely — no JSONL, no <code>/resume</code>, no hook input. That’s silent data loss in the one setting that looks like it should be the safest choice. Use a large number instead.</p>
+<p><strong>The transcript is flushed asynchronously.</strong> Anthropic’s documentation is explicit that the file can lag the in-memory conversation, so the most recent turn or two may be missing when a hook fires. A short sleep before reading mitigates it. It does not guarantee it.</p>
+<p><strong><code>PreCompact</code> has had reliability bugs</strong>, including not firing on manual <code>/compact</code> and receiving an empty <code>transcript_path</code> in some versions. This is why layer 1 exists. Don’t collapse to one trigger.</p>
+<p><strong>The 0.84 is undocumented and will drift silently.</strong> When it changes there’s no error — the bar quietly misaligns and layer 1 starts firing late. Compute the ratio against <code>used_percentage</code> on every run and log divergence. That turns a magic constant into a self-checking one.</p>
+<p><strong>The JSONL line schema is internal.</strong> Pin whatever you build on top of it and re-check after upgrades.</p>
+<p><strong>These files contain everything you ever pasted into that terminal.</strong> Gitignore the backup directory before the first run. Gitignore alone isn’t sufficient: if the directory sits inside the repo, the agent’s own Grep and Glob will traverse it and read prior transcripts back into context. Add a deny rule or store it outside the tree.</p>
+</section>
+<section id="what-this-doesnt-solve" class="level1">
+<h1>What this doesn’t solve</h1>
+<p>Backups are retrieval, not context management. They help when you know what you’re looking for, weeks later.</p>
+<p>The larger win inside a single session is different: keep the plan, the constraints, and the rejected approaches in a working file the agent re-reads, rather than in conversation it has to remember. Do that and compaction stops mattering much — the agent re-reads a few hundred tokens and is fully oriented. Same window, different failure mode entirely.</p>
+<p>Archiving is what you do so the record survives. Externalizing state is what you do so you need the record less often.</p>
+<p>Treat the session transcript like a write-ahead log. The context window is a bounded resource with a real failure mode, the log is already being written to disk, and the hooks to checkpoint and keep it are sitting right there in the tooling. It just takes a little plumbing.</p>
+<p>Full scripts: <a href="statusline.sh"><code>statusline.sh</code></a> · <a href="pre-compact-backup.sh"><code>pre-compact-backup.sh</code></a></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<div>
+    <hr>
+
+    <a href="https://www.buymeacoffee.com/niharikaba1"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a book&amp;emoji=📖&amp;slug=niharikaba1&amp;button_colour=5F7FFF&amp;font_colour=ffffff&amp;font_family=Poppins&amp;outline_colour=000000&amp;coffee_colour=FFDD00"></a>
+    <h4>Get Notified when Niharika Publishes!</h4>
+    <ol>
+        <li><a href="https://forms.gle/YD4DNxqgQmw5fbGR9">Subscribe here!</a></li>
+        <li><a href="https://medium.com/@niharikabalachandra">Follow Niharika on Medium</a></li>
+    </ol>
+    <hr>
+
+</div>
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<script src="https://utteranc.es/client.js" repo="niharikabalachandra/blog_comments" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright 2024, Niharika Balachandra. <a href="https://forms.gle/YD4DNxqgQmw5fbGR9">Subscribe here!</a></p>
+</div>   
+    <div class="nav-footer-center">
+
+<div class="cookie-consent-footer"><a href="#" id="open_preferences_center">Cookie Preferences</a></div></div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://www.niharikabalachandra.com/posts/welcome/index.html</loc>
+    <lastmod>2026-07-29T20:15:58.978Z</lastmod>
+  </url>
+  <url>
+    <loc>https://www.niharikabalachandra.com/posts/auto-saving-claude-code/index.html</loc>
+    <lastmod>2026-07-29T20:06:27.030Z</lastmod>
+  </url>
+  <url>
     <loc>https://www.niharikabalachandra.com/about.html</loc>
-    <lastmod>2024-07-15T03:16:05.916Z</lastmod>
+    <lastmod>2026-07-29T20:17:39.844Z</lastmod>
+  </url>
+  <url>
+    <loc>https://www.niharikabalachandra.com/index.html</loc>
+    <lastmod>2024-07-16T07:19:53.727Z</lastmod>
   </url>
   <url>
     <loc>https://www.niharikabalachandra.com/posts/image_recognition/index.html</loc>
     <lastmod>2024-07-15T03:16:05.952Z</lastmod>
-  </url>
-  <url>
-    <loc>https://www.niharikabalachandra.com/posts/welcome/index.html</loc>
-    <lastmod>2024-07-15T03:16:05.953Z</lastmod>
-  </url>
-  <url>
-    <loc>https://www.niharikabalachandra.com/index.html</loc>
-    <lastmod>2024-07-16T06:17:13.072Z</lastmod>
   </url>
 </urlset>

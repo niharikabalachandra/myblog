@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/auto-saving-claude-code/index.html",
       "/posts/image_recognition/index.html",
       "/posts/welcome/index.html"
     ]

@@ -10,7 +10,203 @@
 <atom:link href="https://www.niharikabalachandra.com/index.xml" rel="self" type="application/rss+xml"/>
 <description>Niharika&#39;s blog where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future. </description>
 <generator>quarto-1.4.549</generator>
-<lastBuildDate>Sat, 03 Feb 2024 08:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 29 Jul 2026 07:00:00 GMT</lastBuildDate>
+<item>
+  <title>Building a Reliable Auto-Backup for Claude Code Sessions Without External Dependencies</title>
+  <dc:creator>Niharika Balachandra</dc:creator>
+  <link>https://www.niharikabalachandra.com/posts/auto-saving-claude-code/</link>
+  <description><![CDATA[ 
+<div class="page-columns page-rows-contents page-layout-article"><div class="social-share"><a href="https://x.com/intent/post?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;text=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="twitter"><i class="fa-brands fa-x-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;title=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most.&amp;body=Check out this link:https://niharikabalachandra.com/posts/auto-saving-claude-code/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://niharikabalachandra.com/posts/auto-saving-claude-code/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://niharikabalachandra.com/posts/auto-saving-claude-code/&amp;title=A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most." target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a></div></div>
+
+
+
+
+
+<p>Git records what you decided. It says nothing about what you rejected.</p>
+<p>That asymmetry is fine for code written by hand, where the alternatives never left your head anyway. It’s a real loss for code written across a long agent session, because the reasoning trail is substantial: the approach that looked right for twenty minutes before a constraint killed it, the library you evaluated and dropped, the three failure modes you found and designed around. That work happened. It shaped the code. And it lives in exactly one place — the conversation.</p>
+<p>Then the context window fills, auto-compaction fires, and the conversation becomes a few hundred tokens of summary.</p>
+<p>Below is a two-layer system that archives the raw transcript automatically: no daemon, no database, no service to keep running, nothing to install but <code>jq</code>. Layer 1 is opportunistic — a status line that checkpoints in the background once you cross a threshold. Layer 2 is guaranteed — a hook that fires exactly once, right before compaction, regardless of what layer 1 did.</p>
+<section id="what-compaction-actually-does" class="level1">
+<h1>What compaction actually does</h1>
+<p>Compaction compresses what the <em>model</em> sees. It does not delete anything on disk.</p>
+<p>Claude Code writes every session to plaintext JSONL at <code>~/.claude/projects/&lt;encoded-cwd&gt;/&lt;session-id&gt;.jsonl</code> — one JSON event per line, covering prompts, responses, and every tool call. That file keeps growing straight through a compaction event. <code>/resume</code> and <code>/export</code> both read from it.</p>
+<p>Worth being precise about, because it changes what problem you’re solving. You are not rescuing data from deletion. You are fixing four narrower things:</p>
+<ol type="1">
+<li><strong>Retention is 30 days by default.</strong> <code>cleanupPeriodDays</code> defaults to 30, cleanup runs at startup, and deletion is a hard <code>unlink()</code> — no trash, no warning, no recovery.</li>
+<li><strong>Storage is keyed by encoded working directory in a global folder.</strong> Move or rename the project and the association breaks.</li>
+<li><strong>Compaction boundaries aren’t marked.</strong> Nothing in the raw file tells you where the agent’s working memory got flattened — which is precisely the point you want to inspect when it starts relitigating a question it had already settled.</li>
+<li><strong><code>/export</code> is manual, one session at a time.</strong> That does not survive contact with a real week.</li>
+</ol>
+<p>The goal is converting a volatile, path-keyed, 30-day cache into a durable, project-local, annotated, greppable record.</p>
+</section>
+<section id="layer-1-the-status-line-as-an-instrument" class="level1">
+<h1>Layer 1: the status line as an instrument</h1>
+<p>Claude Code’s <code>statusLine</code> runs a shell command and renders its first line of stdout at the bottom of the terminal. It re-runs whenever conversation messages update — throttled to at most every 300ms — and a <code>refreshInterval</code> can re-run it on a timer as well. It receives a JSON payload on stdin containing <code>session_id</code>, <code>transcript_path</code>, <code>model</code>, <code>workspace</code>, and a <code>context_window</code> object with token counts.</p>
+<p>That’s a fill gauge <em>and</em> a trigger that already has the transcript path in hand. So the status line does two jobs: it shows you where you are, and past a threshold it starts checkpointing in the background.</p>
+<p>Mine fires at 80% of the real compact budget, throttled to once per five minutes per session, with a lockfile so concurrent invocations don’t interleave writes.</p>
+<p>Two implementation details that cost me time. Anything the script prints to stdout <em>becomes</em> your status line, so background the backup and discard its output. And the throttle needs a lockfile rather than a timestamp check — the status line can re-enter faster than a backup completes.</p>
+</section>
+<section id="the-budget-math-and-why-used_percentage-misleads" class="level1">
+<h1>The budget math, and why <code>used_percentage</code> misleads</h1>
+<p>The payload includes <code>context_window.used_percentage</code>, which is the obvious field to threshold on. On my setup it consistently disagrees with the “% until auto-compact” indicator in the UI, and it disagrees in the dangerous direction: it reads low.</p>
+<p>The reason appears to be that auto-compaction doesn’t wait for the window to fill. It triggers at roughly 84% of the window, reserving the remainder for the compaction pass itself. <code>used_percentage</code> is computed against the <em>full</em> window, so it measures the wrong denominator.</p>
+<p>The correction is a division:</p>
+<pre><code>budget_used = (cache_read_input_tokens
+             + cache_creation_input_tokens
+             + input_tokens)
+             / (context_window_size * 0.84) * 100</code></pre>
+<p>The important part is that this is a <em>multiplicative</em> factor, not a fixed offset. The gap widens as you fill, and it is widest exactly where being wrong costs the most:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th><code>used_percentage</code> reads</th>
+<th>Actual budget consumed</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>40%</td>
+<td>48%</td>
+<td>8pp</td>
+</tr>
+<tr class="even">
+<td>60%</td>
+<td>71%</td>
+<td>11pp</td>
+</tr>
+<tr class="odd">
+<td>78%</td>
+<td>93%</td>
+<td>15pp</td>
+</tr>
+<tr class="even">
+<td>84%</td>
+<td>100% — compaction fires</td>
+<td>16pp</td>
+</tr>
+</tbody>
+</table>
+<p>At 78% you feel like you have a fifth of the session left. You have about 7%. That misread is what makes a naive threshold fire after compaction rather than before it.</p>
+</section>
+<section id="layer-2-precompact-as-the-backstop" class="level1">
+<h1>Layer 2: PreCompact as the backstop</h1>
+<p>The status line is opportunistic. It only runs when messages update, and it’s throttled. A single large tool result can consume the remaining budget between two invocations.</p>
+<p>The guarantee comes from the <code>PreCompact</code> hook, which fires immediately before compaction and receives the same <code>session_id</code> and <code>transcript_path</code> on stdin. No throttle, synchronous, one job. Its matcher distinguishes <code>auto</code> (the window filled) from <code>manual</code> (you ran <code>/compact</code>).</p>
+<p>Neither layer is load-bearing alone. That’s the design: two independent triggers with different failure modes, writing through one shared, idempotent writer.</p>
+<p>Backups land in <code>claude_chat_backup/auto_backup_&lt;timestamp&gt;_&lt;session_short&gt;.jsonl</code>. Keying on the session ID is not cosmetic — run three agents against one repo and timestamped filenames collide under concurrency, interleaving three conversations into noise.</p>
+</section>
+<section id="where-to-register-it" class="level1">
+<h1>Where to register it</h1>
+<p>Hooks go in a settings JSON file, not <code>CLAUDE.md</code>. Memory files are instructions loaded into the model’s context; a model <em>asked</em> to back up your transcript usually will, which is not the same as it always happening. Hooks are deterministic. That’s the point.</p>
+<p>The documented scopes are:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>~/.claude/settings.json</code></td>
+<td>user, all projects</td>
+</tr>
+<tr class="even">
+<td><code>.claude/settings.json</code></td>
+<td>project, committed</td>
+</tr>
+<tr class="odd">
+<td><code>.claude/settings.local.json</code></td>
+<td>project, gitignored</td>
+</tr>
+</tbody>
+</table>
+<p>Claude Code validates these strictly, which is why unknown keys disappear rather than erroring — useful to know before you spend an hour debugging a hook that never fires.</p>
+<p>Verify where yours actually loaded from. Run <code>/status</code> and read the “Setting sources” line, then <code>/hooks</code>, which lists every registered hook and the file it came from. A hook in an unrecognized scope doesn’t warn you. It silently isn’t there, and you find out on the day you needed it.</p>
+</section>
+<section id="what-this-is-like-to-use" class="level1">
+<h1>What this is like to use</h1>
+<p>The backup layer is invisible, which is correct. You notice it twice: once when you set it up, and once weeks later when you need something out of it.</p>
+<p>The status line is the part you interact with, and it changed how I work more than the archive did. A fill gauge turns an invisible resource into a visible one, and visible resources get budgeted. You stop opening a large exploratory question at 70%. You start a fresh session for the unrelated tangent instead of paying for it out of the current window. When the bar goes amber you wrap the current thread rather than starting a new one and losing it mid-flight.</p>
+<p>None of that requires the backups. It’s a second-order benefit of instrumenting the resource at all, and it may be the larger one.</p>
+</section>
+<section id="the-audit-trail" class="level1">
+<h1>The audit trail</h1>
+<p>Weeks out, the question is rarely “what does this code do.” It’s “why is it like this.”</p>
+<p>Git answers a narrow version. The commit shows the final shape; the message shows what you thought was worth writing down at the time. Neither captures the two hours where you established that the obvious approach deadlocks under concurrent writes — the reason the non-obvious approach exists at all.</p>
+<p>An archived transcript answers it directly, and the queries are boring in a good way. This one searches every prompt in every backed-up session for a keyword, so you can find the conversation that touched a topic without remembering which session it was in:</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># every prompt across every session touching a topic</span></span>
+<span id="cb2-2"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">jq</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-r</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'select(.type == "user")</span></span>
+<span id="cb2-3"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">       | [.timestamp,</span></span>
+<span id="cb2-4"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">          (.message.content</span></span>
+<span id="cb2-5"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">           | if type == "string" then .</span></span>
+<span id="cb2-6"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">             else (map(.text? // "") | join(" ")) end)]</span></span>
+<span id="cb2-7"><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">       | @tsv'</span> claude_chat_backup/<span class="pp" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">*</span>.jsonl <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-8">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">|</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-i</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"idempotency"</span></span></code></pre></div>
+<p>Three uses that have earned their keep:</p>
+<p><strong>Reconstructing a decision.</strong> Find where a design turned, read the surrounding twenty exchanges, recover the constraint you’d forgotten. This is the one I expected.</p>
+<p><strong>Recovering rejected work.</strong> Agents produce a lot of code that gets discarded for reasons that later stop applying. That code is in the transcript, and it’s often a better starting point than writing it again.</p>
+<p><strong>Auditing the agent, not just the output.</strong> Reading a long session end to end shows you where it drifted, where it over-claimed, where it quietly dropped a requirement. That’s a different signal from reviewing the diff, and it’s the one that improves how you prompt.</p>
+<p>Log the compaction points alongside the transcript and you get one more thing: a marker for where the agent’s working memory was flattened. When a session goes sideways, that boundary is usually near the cause.</p>
+</section>
+<section id="caveats" class="level1">
+<h1>Caveats</h1>
+<p><strong>Never set <code>cleanupPeriodDays: 0</code>.</strong> The documented meaning is “disable cleanup,” but it has been reported to disable transcript persistence entirely — no JSONL, no <code>/resume</code>, no hook input. That’s silent data loss in the one setting that looks like it should be the safest choice. Use a large number instead.</p>
+<p><strong>The transcript is flushed asynchronously.</strong> Anthropic’s documentation is explicit that the file can lag the in-memory conversation, so the most recent turn or two may be missing when a hook fires. A short sleep before reading mitigates it. It does not guarantee it.</p>
+<p><strong><code>PreCompact</code> has had reliability bugs</strong>, including not firing on manual <code>/compact</code> and receiving an empty <code>transcript_path</code> in some versions. This is why layer 1 exists. Don’t collapse to one trigger.</p>
+<p><strong>The 0.84 is undocumented and will drift silently.</strong> When it changes there’s no error — the bar quietly misaligns and layer 1 starts firing late. Compute the ratio against <code>used_percentage</code> on every run and log divergence. That turns a magic constant into a self-checking one.</p>
+<p><strong>The JSONL line schema is internal.</strong> Pin whatever you build on top of it and re-check after upgrades.</p>
+<p><strong>These files contain everything you ever pasted into that terminal.</strong> Gitignore the backup directory before the first run. Gitignore alone isn’t sufficient: if the directory sits inside the repo, the agent’s own Grep and Glob will traverse it and read prior transcripts back into context. Add a deny rule or store it outside the tree.</p>
+</section>
+<section id="what-this-doesnt-solve" class="level1">
+<h1>What this doesn’t solve</h1>
+<p>Backups are retrieval, not context management. They help when you know what you’re looking for, weeks later.</p>
+<p>The larger win inside a single session is different: keep the plan, the constraints, and the rejected approaches in a working file the agent re-reads, rather than in conversation it has to remember. Do that and compaction stops mattering much — the agent re-reads a few hundred tokens and is fully oriented. Same window, different failure mode entirely.</p>
+<p>Archiving is what you do so the record survives. Externalizing state is what you do so you need the record less often.</p>
+<p>Treat the session transcript like a write-ahead log. The context window is a bounded resource with a real failure mode, the log is already being written to disk, and the hooks to checkpoint and keep it are sitting right there in the tooling. It just takes a little plumbing.</p>
+<p>Full scripts: <a href="statusline.sh"><code>statusline.sh</code></a> · <a href="pre-compact-backup.sh"><code>pre-compact-backup.sh</code></a></p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>tools</category>
+  <guid>https://www.niharikabalachandra.com/posts/auto-saving-claude-code/</guid>
+  <pubDate>Wed, 29 Jul 2026 07:00:00 GMT</pubDate>
+  <media:content url="https://www.niharikabalachandra.com/posts/auto-saving-claude-code/image.jpg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>Image Recognition Engine with GenAI Explanation</title>
   <dc:creator>Niharika Balachandra</dc:creator>
@@ -423,15 +619,15 @@ O --&gt; D
   <dc:creator>Niharika Balachandra</dc:creator>
   <link>https://www.niharikabalachandra.com/posts/welcome/</link>
   <description><![CDATA[ 
-<div class="page-columns page-rows-contents page-layout-article"><div class="social-share"><a href="https://twitter.com/share?url=https://niharikabalachandra.com/posts/welcome/&amp;text=Welcome to my blog!" target="_blank" class="twitter"><i class="fab fa-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://niharikabalachandra.com/posts/welcome/&amp;title=Welcome to my blog!" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Welcome to my blog!&amp;body=Check out this link:https://niharikabalachandra.com/posts/welcome/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://niharikabalachandra.com/posts/welcome/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://niharikabalachandra.com/posts/welcome/&amp;title=Welcome to my blog!" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a></div></div>
+<div class="page-columns page-rows-contents page-layout-article"><div class="social-share"><a href="https://x.com/intent/post?url=https://niharikabalachandra.com/posts/welcome/&amp;text=Welcome to my blog!" target="_blank" class="twitter"><i class="fa-brands fa-x-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://niharikabalachandra.com/posts/welcome/&amp;title=Welcome to my blog!" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Welcome to my blog!&amp;body=Check out this link:https://niharikabalachandra.com/posts/welcome/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://niharikabalachandra.com/posts/welcome/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://niharikabalachandra.com/posts/welcome/&amp;title=Welcome to my blog!" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a></div></div>
 
 
 
 
 
-<p>Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I’ve led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.</p>
+<p>Welcome to my blog! I’m Niharika, a passionate data scientist weaving together data, tech, and creativity. Over nine years, I’ve worked across Machine Learning, NLP, Causal Inference, Deep Learning, and Generative AI—most recently as a Staff Data Scientist at SoFi, where I lead the architecture, deployment, and evaluation of GenAI platforms and consumer AI agents, after years leading data science teams in E-commerce and Ad Tech.</p>
 <p>But, let’s make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.</p>
-<p>Expect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!</p>
+<p>Expect new posts as projects come together, rather than on a fixed schedule. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let’s connect and delve into this exciting space!</p>
 <p>If this labor of love enriches your life, please consider supporting it with a <a href="https://www.buymeacoffee.com/niharikaba1" class="external" target="_blank">donation</a>. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know.</p>
 
 
