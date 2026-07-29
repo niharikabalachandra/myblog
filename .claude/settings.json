@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./claude_chat_backup/**)",
+      "Grep(./claude_chat_backup/**)",
+      "Glob(./claude_chat_backup/**)"
+    ]
+  },
+  "attribution": {
+    "commit": ""
+  }
+}
