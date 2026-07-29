@@ -1,6 +1,10 @@
 project:
   type: website
   output-dir: docs
+  render:
+    - "*.qmd"
+    - "posts/**/*.qmd"
+    - "!CLAUDE.md"
 website:
   title: "Niharika's blog"
   site-url: https://www.niharikabalachandra.com

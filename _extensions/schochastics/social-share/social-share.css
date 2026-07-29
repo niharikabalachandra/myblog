@@ -32,12 +32,12 @@
 }
 
 .social-share a.twitter {
-    border-color: #1DA1F2;
-    color: #1DA1F2;
+    border-color: #000;
+    color: #000;
 }
 
 .social-share a.twitter:hover {
-    background: #1DA1F2;
+    background: #000;
     color: white;
 }
 
@@ -98,5 +98,15 @@
 
 .social-share a.mastodon:hover {
     background: #6364FF;
+    color: white;
+}
+
+.social-share a.bsky {
+    border-color: #0A7AFF;
+    color: #0A7AFF;
+}
+
+.social-share a.bsky:hover {
+    border-color: #0A7AFF;
     color: white;
 }
