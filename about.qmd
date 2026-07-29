@@ -17,9 +17,9 @@ about:
 
 ---
 
-Welcome to Niharika's personal blog—an intersection of data, technology, and creativity. Niharika is a seasoned Data Science Manager with a seven-year track record in leading teams focused on Machine Learning, Natural Language Processing, and Deep Learning.
+Welcome to Niharika's personal blog—an intersection of data, technology, and creativity. Niharika is a Staff Data Scientist with a nine-year track record spanning Machine Learning, Natural Language Processing, Causal Inference, Deep Learning, and Generative AI.
 
-Niharika is proficient in guiding teams specializing in Generative AI, Consumer Behavior Analytics, Predictive Modeling, Deep Learning, and more, particularly within the domains of eCommerce and Ad Tech. Her passion lies in translating quantifiable data into actionable insights that positively shape businesses. Niharika brings a unique blend of market awareness and technical prowess, ensuring the delivery of user-centric products and solutions.
+Niharika currently leads the architecture, deployment, and evaluation of GenAI platforms and consumer AI agents at SoFi, building on years managing data science teams focused on Generative AI, Consumer Behavior Analytics, and Predictive Modeling within the domains of eCommerce and Ad Tech. Her passion lies in translating quantifiable data into actionable insights that positively shape businesses. Niharika brings a unique blend of market awareness and technical prowess, ensuring the delivery of user-centric products and solutions.
 
 When not innovating on data platforms, Niharika unwinds by molding clay on a potter's wheel and immersing herself in the strokes of paint on canvas.
 
@@ -29,15 +29,21 @@ Explore Niharika's blog to embark on a journey where data points weave stories, 
 
 **University of Illinois at Chicago** | Chicago, IL
 
-Master of Science in Electrical and Computer Engineering, Aug 2015 - May 2017
+Master of Science in Electrical and Computer Engineering, specialization in Machine Learning and Deep Learning, May 2017
 
 
-**M. S. Ramaiah Institute of technology** | Bangalore, India
+**M. S. Ramaiah Institute of Technology** | Bangalore, India
 
-Bachelor’s in Electronics and Communication Engineering (B.E), Sept 2007 - June 2011
+Bachelor's in Engineering, specialization in Electronics and Communication Engineering, Jun 2015
 
 ## Experience
 
-**Skai.io (formerly Kenshoo Inc.)** | Data Science Manager | Mar 2019 - present
+**SoFi (Social Finance, LLC)** | Staff Data Scientist | Apr 2025 - present
+
+**Skai.io (formerly Kenshoo Inc.)** | Data Science Manager, Product | Feb 2022 - Apr 2025
+
+**Skai.io (formerly Kenshoo Inc.)** | Senior Data Scientist - Product | Jul 2020 - Feb 2022
+
+**Skai.io (formerly Kenshoo Inc.)** | Data Scientist - Product | Mar 2019 - Jul 2020
 
 **Publicis Sapient** | Associate Data Scientist | Aug 2017 - Mar 2019

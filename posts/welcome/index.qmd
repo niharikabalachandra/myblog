@@ -24,11 +24,11 @@ share:
   location: "before-body"
 ---
 
-Welcome to my blog! I'm Niharika, a passionate data scientist weaving together data, tech, and creativity. Over seven years, I've led teams in ML, NLP, and beyond, transforming data into actionable insights for user-centric solutions in E-commerce and Ad Tech.
+Welcome to my blog! I'm Niharika, a passionate data scientist weaving together data, tech, and creativity. Over nine years, I've worked across Machine Learning, NLP, Causal Inference, Deep Learning, and Generative AI—most recently as a Staff Data Scientist at SoFi, where I lead the architecture, deployment, and evaluation of GenAI platforms and consumer AI agents, after years leading data science teams in E-commerce and Ad Tech.
 
 But, let's make this journey about us. Follow along as I navigate the ever-changing and sometimes overwhelming world of AI through applied projects. This space is meant to be shared—a place to connect and learn together.
 
-Expect bi-monthly posts on every 2nd and 4th Saturday. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let's connect and delve into this exciting space!
+Expect new posts as projects come together, rather than on a fixed schedule. Without further ado, join me on a journey where data tells stories, and together, we explore the algorithms actively shaping our future. Let's connect and delve into this exciting space!
 
 If this labor of love enriches your life, please consider supporting it with a [donation](https://www.buymeacoffee.com/niharikaba1){.external target="_blank"}. Your contributions have a real impact, enabling me to curate content that demystifies the rapidly changing world of AI, fostering innovation and creating a community. This is a passion project I pursue during my free time, and I aim to keep it free, ad-free, and alive thanks to reader patronage. If you already donate, I appreciate you more than you know.
 
