@@ -55,6 +55,8 @@ Claude Code's `statusLine` runs a shell command and renders its first line of st
 
 That's a fill gauge *and* a trigger that already has the transcript path in hand. So the status line does two jobs: it shows you where you are, and past a threshold it starts checkpointing in the background.
 
+![The context bar at 84% — past the 80% backup threshold, into the amber "COMPACT SOON" zone.](ctx-bar.jpg)
+
 Mine fires at 80% of the real compact budget, throttled to once per five minutes per session, with a lockfile so concurrent invocations don't interleave writes.
 
 Two implementation details that cost me time. Anything the script prints to stdout *becomes* your status line, so background the backup and discard its output. And the throttle needs a lockfile rather than a timestamp check — the status line can re-enter faster than a backup completes.

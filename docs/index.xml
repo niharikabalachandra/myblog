@@ -43,6 +43,12 @@
 <h1>Layer 1: the status line as an instrument</h1>
 <p>Claude Code’s <code>statusLine</code> runs a shell command and renders its first line of stdout at the bottom of the terminal. It re-runs whenever conversation messages update — throttled to at most every 300ms — and a <code>refreshInterval</code> can re-run it on a timer as well. It receives a JSON payload on stdin containing <code>session_id</code>, <code>transcript_path</code>, <code>model</code>, <code>workspace</code>, and a <code>context_window</code> object with token counts.</p>
 <p>That’s a fill gauge <em>and</em> a trigger that already has the transcript path in hand. So the status line does two jobs: it shows you where you are, and past a threshold it starts checkpointing in the background.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.niharikabalachandra.com/posts/auto-saving-claude-code/ctx-bar.jpg" class="img-fluid figure-img"></p>
+<figcaption>The context bar at 84% — past the 80% backup threshold, into the amber “COMPACT SOON” zone.</figcaption>
+</figure>
+</div>
 <p>Mine fires at 80% of the real compact budget, throttled to once per five minutes per session, with a lockfile so concurrent invocations don’t interleave writes.</p>
 <p>Two implementation details that cost me time. Anything the script prints to stdout <em>becomes</em> your status line, so background the backup and discard its output. And the throttle needs a lockfile rather than a timestamp check — the status line can re-enter faster than a backup completes.</p>
 </section>
