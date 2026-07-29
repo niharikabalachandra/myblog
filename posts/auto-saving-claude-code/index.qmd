@@ -14,7 +14,7 @@ format:
     toc-location: left
 share:
   permalink: "https://niharikabalachandra.com/posts/auto-saving-claude-code/"
-  description: "A two-layer, dependency-free backup system for Claude Code session transcripts — and why the naive compaction threshold reads 16 points low right when being wrong costs the most."
+  description: "A two-layer, dependency-free backup system for Claude Code session transcripts — why the naive compaction threshold reads low, and how to derive the real correction factor for your own setup."
   twitter: true
   facebook: true
   reddit: true
@@ -57,7 +57,7 @@ That's a fill gauge *and* a trigger that already has the transcript path in hand
 
 ![The context bar at 84% — past the 80% backup threshold, into the amber "COMPACT SOON" zone.](ctx-bar.jpg)
 
-Mine fires at 80% of the real compact budget, throttled to once per five minutes per session, with a lockfile so concurrent invocations don't interleave writes.
+Mine fires at 80% of what I've measured as my real compact budget — "real" versus "nominal," and how to derive that number for your own setup, is the next section — throttled to once per five minutes per session, with a lockfile so concurrent invocations don't interleave writes.
 
 Two implementation details that cost me time. Anything the script prints to stdout *becomes* your status line, so background the backup and discard its output. And the throttle needs a lockfile rather than a timestamp check — the status line can re-enter faster than a backup completes.
 
@@ -65,18 +65,26 @@ Two implementation details that cost me time. Anything the script prints to stdo
 
 The payload includes `context_window.used_percentage`, which is the obvious field to threshold on. On my setup it consistently disagrees with the "% until auto-compact" indicator in the UI, and it disagrees in the dangerous direction: it reads low.
 
-The reason appears to be that auto-compaction doesn't wait for the window to fill. It triggers at roughly 84% of the window, reserving the remainder for the compaction pass itself. `used_percentage` is computed against the *full* window, so it measures the wrong denominator.
+There's no shortcut here, either. The stdin payload only carries the raw `used_percentage` and `remaining_percentage` fields — whatever the UI computes for "% until auto-compact" isn't in the JSON handed to hooks or the status line. Reconstructing the real number yourself isn't a stylistic choice; it's the only option available.
 
-The correction is a division:
+The numerator, at least, is documented rather than inferred: `used_percentage` is `(input_tokens + cache_creation_input_tokens + cache_read_input_tokens) / context_window_size`, deliberately excluding `output_tokens`.
+
+The denominator is where it gets murky. Auto-compaction doesn't wait for the window to fill — some headroom is reserved before it fires. I said in an earlier draft of this post that the reserve was "for the compaction pass itself." That was imprecise, and worth correcting rather than quietly fixing: the reserve is primarily there so the model has room to actually write its response, with system overhead and compaction's own bookkeeping as secondary factors — one documented figure puts it around 13K tokens reserved on a 200K-token window. `used_percentage` is computed against the *full* window, not the window minus that reserve, so it measures against the wrong denominator either way.
+
+How big is the reserve, exactly? Depends who you ask — and depends on your own installation. The most-cited reverse-engineering puts the effective trigger around 83%, enforced via an internal clamp. Other write-ups describe an effective ~10% reserve, putting the hard limit closer to 90%. At least one careful long-running observation argues the threshold has drifted downward over time, toward 64–75% utilization, as a way to preserve reasoning quality on long contexts. None of those numbers is fixed for you specifically, either: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` lets you override the trigger percentage directly, so if you've set it, your real number is whatever you set it to, not whatever I measured on mine.
+
+So the `0.84` below isn't a constant to copy into your own hooks. It's the number I measured on my own setup, on the day I measured it. What's portable is the method:
 
 ```
 budget_used = (cache_read_input_tokens
              + cache_creation_input_tokens
              + input_tokens)
-             / (context_window_size * 0.84) * 100
+             / (context_window_size * your_measured_budget_fraction) * 100
 ```
 
-The important part is that this is a *multiplicative* factor, not a fixed offset. The gap widens as you fill, and it is widest exactly where being wrong costs the most:
+Derive `your_measured_budget_fraction` by watching where compaction actually fires relative to `used_percentage` on your own setup, then keep re-checking it — log the divergence between your assumed fraction and reality on every run, because this number moves (across Claude Code versions, and if anyone touches the override env var) with no warning when it does.
+
+With my measured 0.84, here's what the gap between the naive reading and reality looked like. It's a *multiplicative* gap, not a fixed offset — which is what makes it dangerous: it widens as you fill, and it's widest exactly where being wrong costs the most:
 
 | `used_percentage` reads | Actual budget consumed | Gap |
 |---|---|---|
@@ -85,7 +93,7 @@ The important part is that this is a *multiplicative* factor, not a fixed offset
 | 78% | 93% | 15pp |
 | 84% | 100% — compaction fires | 16pp |
 
-At 78% you feel like you have a fifth of the session left. You have about 7%. That misread is what makes a naive threshold fire after compaction rather than before it.
+At 78% you feel like you have a fifth of the session left; you actually have about 7%. By 84% — a point a naive reading of `used_percentage` would still call mid-session — compaction has already fired. That worst-case 16-point gap, on my setup, is the whole reason this section exists. Yours may differ; measure it.
 
 # Layer 2: PreCompact as the backstop
 
@@ -158,7 +166,7 @@ Log the compaction points alongside the transcript and you get one more thing: a
 
 **`PreCompact` has had reliability bugs**, including not firing on manual `/compact` and receiving an empty `transcript_path` in some versions. This is why layer 1 exists. Don't collapse to one trigger.
 
-**The 0.84 is undocumented and will drift silently.** When it changes there's no error — the bar quietly misaligns and layer 1 starts firing late. Compute the ratio against `used_percentage` on every run and log divergence. That turns a magic constant into a self-checking one.
+**Your measured budget fraction isn't portable.** It varies across Claude Code versions, and `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` means it can vary per-user on the same version too. Treat whatever you measure as something to keep re-verifying, not a constant to hardcode and forget.
 
 **The JSONL line schema is internal.** Pin whatever you build on top of it and re-check after upgrades.
 
