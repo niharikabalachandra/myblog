@@ -35,7 +35,9 @@ This post builds the layer that makes the archive answer questions, so a new ses
 - a **structured layer**, Google Cloud's Open Knowledge Format (OKF), for the fast, exact lookups you can anticipate, and
 - a **semantic layer**, open-weight embeddings, for the fuzzy, half-remembered questions you can't.
 
-Everything runs locally. No server, no external API, no keys. The interesting result is what the pairing does for latency, and it's not the result I expected going in: the structured layer's edge over semantic search turns out to come mostly from skipping the embedding model entirely, not from out-scanning a vector scan that, on this hardware, never gets slow enough to matter in the range tested.
+Everything runs locally. No server, no external API, no keys. Full code (`recall.py`, `okf_build.py`, `query.py`, `bench.py`) is at [github.com/niharikabalachandra/myblog/tree/main/recall](https://github.com/niharikabalachandra/myblog/tree/main/recall).
+
+The interesting result is what the pairing does for latency, and it's not the result I expected going in: the structured layer's edge over semantic search turns out to come mostly from skipping the embedding model entirely, not from out-scanning a vector scan that never gets slow enough, on this machine, to matter in the range tested. All benchmark numbers in this post are from a CPU-only x86_64 Mac with no GPU acceleration available for the embedding model; the rest of this post just calls that "this machine."
 
 # Why two layers
 
@@ -51,7 +53,7 @@ Its weakness is *supposed* to be the cost model: a brute-force vector search com
 | 800 | 737.5 ms |
 | 1600 | 737.1 ms |
 
-Constant: 64× more history, no measurable slowdown. Not because the scan is free (it isn't; brute-force cosine similarity over N chunks is genuinely O(n)), but because on CPU, encoding the *query itself* costs roughly 700ms per call, and that fixed cost buries the scan at every size tested here. The scan would eventually dominate, with enough history, or on hardware where embedding inference is cheap, but on this setup it never gets the chance.
+Constant: 64× more history, no measurable slowdown. Not because the scan is free (it isn't; brute-force cosine similarity over N chunks is genuinely O(n)), but because on CPU, encoding the *query itself* costs roughly 700ms per call, and that fixed cost buries the scan at every size tested here. The scan would eventually dominate, with enough history, or on hardware where embedding inference is cheap, but on this machine it never gets the chance.
 
 That reframes what OKF is actually for. It's not primarily about outrunning a scan that hasn't started to hurt yet. It's about skipping the embedding call entirely: for a question you could have named in advance, there's no reason to pay 700ms of model inference to answer it.
 
@@ -59,7 +61,19 @@ That reframes what OKF is actually for. It's not primarily about outrunning a sc
 
 [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) is deliberately minimal: a directory of markdown files with YAML frontmatter, cross-linked with ordinary markdown links, no schema registry and no required tooling. If you can `cat` a file you can read it; if you can `git clone` a repo you can ship it.
 
-Each session that produced durable decisions becomes one *concept*: a `type`, a title, a one-line description, tags, and a body of distilled decisions, linking to related concepts. That structure is the whole trick. If you build a small `tag → concepts` index once at ingestion, a structured query becomes a dictionary lookup instead of a scan. Measured, both OKF paths against the semantic baseline:
+Each session that produced durable decisions becomes one *concept*: a `type`, a title, a one-line description, tags, and a body of distilled decisions, linking to related concepts. That structure is the whole trick. If you build a small `tag → concepts` index once at ingestion, a structured query becomes a dictionary lookup instead of a scan:
+
+```python
+def query_by_tag(tag, out_dir):
+    tag_index = json.loads((out_dir / "tag_index.json").read_text())
+    concept_ids = tag_index.get(tag)
+    if not concept_ids:
+        return None
+    return [read_concept_frontmatter(out_dir / "concepts" / f"{cid}.md")
+            for cid in concept_ids]
+```
+
+Measured, both OKF paths against the semantic baseline:
 
 | Corpus | Semantic query | OKF scan (naive) | OKF indexed |
 |---:|---:|---:|---:|
@@ -69,15 +83,17 @@ Each session that produced durable decisions becomes one *concept*: a `type`, a 
 | 800 | 737.5 ms | 66.1 ms | 2.57 ms |
 | 1600 | 737.1 ms | 139.0 ms | 5.87 ms |
 
-Both OKF paths are 100×-1000× cheaper than semantic search at every size, but only the scan tells the story I expected. The naive scan (open every concept file, filter by tag) grew 55× as the corpus grew 64×: linear, as advertised, because it's a directory walk. The indexed lookup grew 23× over the same range, much better than the scan, but not the flat line the theory promises, and I want to be honest about why rather than round it off to "flat" the way the first draft of this post did.
+Both OKF paths are 100x-1000x cheaper than semantic search at every size, but only the scan tells the story I expected. The naive scan (open every concept file, filter by tag) grew 55x as the corpus grew 64x: linear, as advertised, because it's a directory walk. The indexed lookup grew 23x over the same range, much better than the scan, but not the flat line the theory promises, worth stating plainly rather than rounding it off to "flat."
 
-The reason is a genuine implementation gap, not a fluke: `query_by_tag` reads and re-parses the *entire* `tag_index.json` file from disk on every call. The lookup itself, a dict access once the index is in memory, really is O(1). But the wrapper around it isn't, because nothing keeps the parsed index resident between queries; each call pays a fresh JSON-parse cost proportional to the index's size. At 1,600 sessions that cost is still under 6ms, dwarfed by either scan, so it doesn't change the practical conclusion. But "the index is O(1), so the path is flat" is a claim about the data structure, not about this particular implementation of it: caching the parsed index across calls (instead of reloading per query) is the fix, and this version doesn't do that yet.
+The reason is visible in the snippet above: `query_by_tag` reads and re-parses the *entire* `tag_index.json` file from disk on every call. The lookup itself, a dict access once the index is in memory, really is O(1). But the wrapper around it isn't, because nothing keeps the parsed index resident between queries; each call pays a fresh JSON-parse cost proportional to the index's size. At 1,600 sessions that cost is still under 6ms, dwarfed by either scan, so it doesn't change the practical conclusion. But "the index is O(1), so the path is flat" is a claim about the data structure, not about this particular implementation of it: caching the parsed index across calls, instead of reloading per query, is the fix, and `okf_build.py`'s current version doesn't do that yet.
 
-What both OKF paths agree on, and what actually matters: neither one calls the embedding model. That's most of the 100×-1000× gap against semantic search in this table, not that a dict lookup beats a linear scan (it does, but the margin between 0.26ms and 2.5ms is not where the win lives), but that both completely skip the ~700ms of model inference every semantic query pays. Sidestepping the model, not out-scanning the scan, is what OKF is actually buying you.
+What both OKF paths agree on, and what actually matters: neither one calls the embedding model. That's most of the 100x-1000x gap against semantic search in this table, not that a dict lookup beats a linear scan (it does, but the margin between 0.26ms and 2.5ms is not where the win lives), but that both completely skip the ~700ms of model inference every semantic query pays. Sidestepping the model, not out-scanning the scan, is what OKF is actually buying you.
 
-One caveat that's easy to get wrong, and worth stating because I did get it wrong the first time: **the speed comes from the index, not from OKF being markdown.** Answer an OKF query by opening every concept file and reading its frontmatter, and you're back to the naive-scan row above. The fast path exists only when you build the `tag → concepts` map at ingestion and query *that*; it also only holds when you don't rebuild that map from disk on every single call, per the caveat above.
+One caveat that's easy to get wrong: the speed comes from the index, not from OKF being markdown. Answer an OKF query by opening every concept file and reading its frontmatter, and you're back to the naive-scan row above. The fast path exists only when you build the `tag → concepts` map at ingestion and query *that*; it also only holds when you don't rebuild that map from disk on every single call, per the caveat above.
 
-The other cost is authoring, and the same benchmark run put a number on it: indexing 1,600 sessions took about 25 minutes for the semantic layer (embedding every chunk, on CPU) against 2.4 seconds for the rule-based OKF pass: well over 500× cheaper. A useful OKF concept (the actual decision and its rationale, not just keywords) is best written by an agent pass at the end of a session, which is an LLM call per session at ingestion time and erases that ingestion-cost advantage. Which is exactly why you don't OKF everything.
+The other cost is authoring. `okf_build.py` supports two modes today: a free rule-based pass (the default, and the only one measured in this post) that extracts tags and decision sentences with regex heuristics, and an `--llm` flag for agent-authored distillation, one LLM call per session, that should produce better concepts but costs real API tokens. I haven't run the LLM path end to end yet, so whether the quality gain is worth its per-session cost is an open question, and a good candidate for its own follow-up post rather than a claim I'd make without measuring it.
+
+The same benchmark run put a number on the rule-based path specifically: indexing 1,600 sessions took about 25 minutes for the semantic layer (embedding every chunk, on CPU) against 2.4 seconds for the rule-based OKF pass: well over 500x cheaper. Reserve the LLM pass for sessions with decisions worth keeping; leave the rest as searchable raw text.
 
 # How they compose
 
@@ -93,10 +109,25 @@ That's the latency win: not that either layer is individually novel, but that ro
 
 # The embedding model
 
-The semantic layer uses [`nomic-embed-text-v2-moe`](https://huggingface.co/nomic-ai/nomic-embed-text-v2-moe), an open-weight multilingual mixture-of-experts model (305M active parameters) with two properties that matter here:
+The semantic layer uses [`nomic-embed-text-v2-moe`](https://huggingface.co/nomic-ai/nomic-embed-text-v2-moe), an open-weight multilingual mixture-of-experts model (305M active parameters) with two properties that matter here.
 
-- **Matryoshka embeddings.** Native 768 dimensions, truncatable to 256 with a single argument: a 3× storage cut. I measured retrieval accuracy at both dimensions against a small labeled set (200 sessions, 8 topics, one held-out query per topic): topic-level recall@1 was 1.00 at both 768 and 256, truncation cost nothing here. Exact-session recall@1 was 0.00 at both dimensions, but that number is a test-corpus artifact: for the database-migration topic, all 25 of 25 sessions contain the identical labeled decision sentence verbatim, so no embedding has any signal by which to prefer the one session I arbitrarily called "correct" over its 24 word-for-word twins. Small sample, directional not conclusive, but the direction matches what the model card would predict.
-- **Asymmetric prompts.** Documents embed with a `search_document:` prefix, queries with `search_query:`. This is the one detail that silently halves retrieval quality if you get it wrong: index and query must run through separate prompt paths, not the same one.
+**Matryoshka embeddings.** Native 768 dimensions, truncatable to 256 with a single argument: a 3x storage cut. I measured retrieval accuracy at both dimensions against a small labeled set (200 sessions, 8 topics, one held-out query per topic), using recall@1: whether the single top-ranked result is the one correct answer, the strictest member of the recall@k family (recall@5 and recall@10 are more forgiving, asking only whether the right answer showed up somewhere in the top 5 or 10). Topic-level recall@1 was 1.00 at both 768 and 256; truncation cost nothing here. Exact-session recall@1 was 0.00 at both dimensions, but that number is a test-corpus artifact: for the database-migration topic, all 25 of 25 sessions contain the identical labeled decision sentence verbatim, so no embedding has any signal by which to prefer the one session labeled "correct" in the test set over its 24 word-for-word twins. Small sample, directional not conclusive, but the direction matches what the model card would predict.
+
+**Asymmetric prompts.** Documents embed with a `search_document:` prefix, queries with `search_query:`, different prefixes for the same model, because the model was trained to treat "this is a passage that might get searched for" and "this is a question searching for a passage" as two different roles, not interchangeable text. Swap the prefixes, or use the same one for both, and every similarity score still computes, so nothing errors, but the ranking those scores produce degrades toward noise, because you're asking the model to compare two representations it never learned to line up. In code, the fix is keeping the two paths structurally incapable of merging:
+
+```python
+def embed_passages(texts, truncate_dim):
+    """Embed chunks being INDEXED. Kept as a separate function from
+    embed_query so the two prompt types can never accidentally share
+    a prefix."""
+    model = _load_model(truncate_dim)
+    return _normalize(model.encode(texts, prompt_name="passage"))
+
+def embed_query(text, truncate_dim):
+    """Embed a search QUERY. Kept separate from embed_passages."""
+    model = _load_model(truncate_dim)
+    return _normalize(model.encode([text], prompt_name="query"))[0]
+```
 
 Open weights keep the whole system local: the archive never leaves your machine, and there's no per-query cost to amortize.
 
@@ -123,14 +154,16 @@ The synthetic corpus generator produces exactly one file per session: it has no 
 
 Re-indexed after the fix: three overlapping snapshots of one real session collapsed correctly to 246 deduplicated chunks (not 715, the raw sum across all three), and running the indexer again afterward was a clean no-op: zero new chunks, all three files correctly recognized as unchanged.
 
+That no-op case is cheap; the collision fix isn't free in the case that actually matters. Because dedup happens at the session level, every new snapshot re-embeds the session's *entire* chunk set from scratch, not just the turns that are new since the last snapshot. At roughly a quarter to half a second per chunk on this machine (from the ingestion numbers above), a 246-chunk session costs a bit over a minute to re-index every time its backup advances, and that cost only grows as a session runs longer. An incremental version that re-chunks just the new turns and reuses the old ones' embeddings would fix this; the current implementation doesn't.
+
 # Caveats
 
 - **The index is what's fast, and it only answers what you indexed.** The `tag → concepts` map is sub-millisecond and blind to anything untagged. That's the trade for structure; the semantic fallback exists precisely to cover its blind spots.
-- **"O(1) lookup" and "flat query" aren't the same claim.** The tag-index dict access is O(1); this implementation's query path isn't, because it reloads and re-parses the whole index file from disk every call. It's still 20-100× faster than a naive scan at every size I tested, but it grew 23× as the corpus grew 64×; cache the parsed index across calls if you actually need the flat line.
-- **OKF authoring isn't free.** Good concepts want an agent pass: an LLM call per session at ingestion. Reserve it for sessions with decisions worth keeping; leave the rest as searchable raw text.
-- **Absolute milliseconds are machine- and model-specific; measure your own before trusting mine.** I found out why the hard way: my first draft of this post shipped a semantic-latency table that assumed the scan would dominate, before I'd actually run the benchmark. It doesn't, on this hardware; query-embedding latency does. Read the columns against each other and across corpus sizes, not as benchmarks of your laptop.
-- **Respect the asymmetric prompts.** Embedding documents and queries with the same prefix is the most common way to quietly wreck recall with this model.
-- **Brute-force semantic search is O(n).** Fine to a few thousand sessions. Past that, an approximate-nearest-neighbor index (`sqlite-vec`, FAISS) turns the fallback sub-linear, at the cost of build time and exact recall.
+- **"O(1) lookup" and "flat query" aren't the same claim.** The tag-index dict access is O(1); this implementation's query path isn't, because it reloads and re-parses the whole index file from disk every call. It's still 20-100x faster than a naive scan at every size I tested, but it grew 23x as the corpus grew 64x; caching the parsed index across calls would close that gap, and it's a good candidate for its own follow-up post.
+- **OKF authoring isn't free, and only half of it is measured yet.** The rule-based pass is fast and free (the 2.4-second number above); the agent-authored pass, one LLM call per session, isn't built out enough here to know its real cost or quality lift. Reserve it for sessions with decisions worth keeping once it's measured; leave the rest as searchable raw text.
+- **Absolute milliseconds are machine- and model-specific; measure your own before trusting mine.** Query-embedding latency, not the scan, is the dominant cost on this machine. Read the columns against each other and across corpus sizes, not as benchmarks of your laptop.
+- **Respect the asymmetric prompts.** Same reasoning as above: the model was trained on two distinct roles for `search_document:` and `search_query:` text, and collapsing them onto the same prefix is the most common way to quietly wreck recall with this model.
+- **Brute-force semantic search is O(n).** Fine to a few thousand sessions. Past that, an approximate-nearest-neighbor index turns the fallback sub-linear, at the cost of build time and exact recall. `sqlite-vec`, FAISS, and Annoy (Approximate Nearest Neighbors Oh Yeah) are the usual candidates; worth actually trying once real backup data reaches that scale, which it hasn't yet.
 
 The arc across these posts goes from *saving* history, to *organizing* it, to the realization that organizing is just building the right index for the questions you'll actually ask. OKF builds one you can read, for the questions you can anticipate; semantic search builds one for the questions you can't. An agent becomes a real collaborator when it has both, and the engineering worth doing is deciding which knowledge earns the authoring cost of being structured, and which is fine left as searchable raw text.
 
