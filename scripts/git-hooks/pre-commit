@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Blocks a commit outright if it stages anything from the sensitive-data
+# blocklist below, regardless of what .gitignore currently says. .gitignore
+# only stops `git add` from picking a file up passively -- it does nothing
+# against a `git add -f`, a future .gitignore edit that breaks a pattern, or
+# someone just not realizing a path is sensitive. This is the backstop.
+#
+# Installed at .git/hooks/pre-commit (not tracked by git itself -- see
+# scripts/git-hooks/install.sh to (re)install after a fresh clone).
+
+set -euo pipefail
+
+# Each pattern is a grep -E fragment matched against staged file paths.
+BLOCKLIST=(
+  '^claude_chat_backup/'
+  '^recall/[^/]*\.db$'
+  '^recall/okf/'
+  '^recall/\.venv/'
+  '^recall/synthetic_corpus/'
+  '^recall/bench_scratch/'
+  '^recall/__pycache__/'
+)
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+hit=0
+for pattern in "${BLOCKLIST[@]}"; do
+  matches=$(echo "$staged" | grep -E "$pattern" || true)
+  if [ -n "$matches" ]; then
+    hit=1
+    echo "pre-commit: BLOCKED -- staged file matches sensitive-data pattern '$pattern':" >&2
+    echo "$matches" | sed 's/^/  /' >&2
+  fi
+done
+
+if [ "$hit" -eq 1 ]; then
+  echo "" >&2
+  echo "pre-commit: refusing to commit. If this is genuinely safe to commit," >&2
+  echo "unstage it (git restore --staged <file>) or edit the blocklist in" >&2
+  echo "scripts/git-hooks/pre-commit -- don't bypass with --no-verify." >&2
+  exit 1
+fi
+
+exit 0
