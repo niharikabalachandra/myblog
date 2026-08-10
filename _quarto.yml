@@ -32,4 +32,5 @@ format:
   html:
     theme: cosmo
     css: styles.css
+    html-math-method: plain
 
