@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+*.db
+bench_scratch/
+bench_output.log
+synthetic_corpus/
+okf/
