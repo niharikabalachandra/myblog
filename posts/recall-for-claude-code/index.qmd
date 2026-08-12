@@ -35,6 +35,8 @@ This post builds the layer that makes the archive answer questions, so a new ses
 - a **structured layer**, Google Cloud's Open Knowledge Format (OKF), for the fast, exact lookups you can anticipate, and
 - a **semantic layer**, open-weight embeddings, for the fuzzy, half-remembered questions you can't.
 
+That's three tiers in total: the raw `auto_backup_*.jsonl` archive is capture with no retrieval of its own, OKF is the structured catalog that scales, and semantic search is the index built for precision recall.
+
 Everything runs locally. No server, no external API, no keys. Full code (`recall.py`, `okf_build.py`, `query.py`, `bench.py`) is at [github.com/niharikabalachandra/myblog/tree/main/recall](https://github.com/niharikabalachandra/myblog/tree/main/recall).
 
 The interesting result is what the pairing does for latency, and it's not the result I expected going in: the structured layer's edge over semantic search turns out to come mostly from skipping the embedding model entirely, not from out-scanning a vector scan that never gets slow enough, on this machine, to matter in the range tested. All benchmark numbers in this post are from a CPU-only x86_64 Mac with no GPU acceleration available for the embedding model; the rest of this post just calls that "this machine."
@@ -97,7 +99,7 @@ The same benchmark run put a number on the rule-based path specifically: indexin
 
 # How they compose
 
-The two layers aren't competitors; they're front and back.
+The two layers don't compete for the same query; the decision is which layer owns which kind of question. In practice that split is front and back.
 
 **OKF is the front.** For sessions that produced durable decisions, an end-of-session agent pass writes a concept and updates the tag index. Anticipated, structured questions, like "what did we settle on for the budget math" or "which sessions touched concurrency", resolve in low single-digit milliseconds against the index, and the answer is a markdown file you (and the next agent) can actually read.
 
@@ -159,8 +161,9 @@ That no-op case is cheap; the collision fix isn't free in the case that actually
 # Caveats
 
 - **The index is what's fast, and it only answers what you indexed.** The `tag → concepts` map is sub-millisecond and blind to anything untagged. That's the trade for structure; the semantic fallback exists precisely to cover its blind spots.
-- **"O(1) lookup" and "flat query" aren't the same claim.** The tag-index dict access is O(1); this implementation's query path isn't, because it reloads and re-parses the whole index file from disk every call. It's still 20-100x faster than a naive scan at every size I tested, but it grew 23x as the corpus grew 64x; caching the parsed index across calls would close that gap, and it's a good candidate for its own follow-up post.
+- **"O(1) lookup" and "flat query" aren't the same claim.** The tag-index dict access is O(1); this implementation's query path isn't, because it reloads and re-parses the whole index file from disk every call. What it actually does is scale sublinearly, not stay flat: it grew 23x as the corpus grew 64x. Still 20-100x faster than a naive scan at every size I tested; caching the parsed index across calls would close the remaining gap, and it's a good candidate for its own follow-up post.
 - **OKF authoring isn't free, and only half of it is measured yet.** The rule-based pass is fast and free (the 2.4-second number above); the agent-authored pass, one LLM call per session, isn't built out enough here to know its real cost or quality lift. Reserve it for sessions with decisions worth keeping once it's measured; leave the rest as searchable raw text.
+- **A stale OKF concept is worse than no concept.** A missing concept just falls through to semantic search. A stale one, where the decisions it records no longer match the code or reasoning that produced them, doesn't fail that way: the index still returns it, confidently, and an agent acts on outdated ground truth as if it were current. That risk is real, and since the agent-authored distillation path is unmeasured in this post, it's not yet quantified either.
 - **Absolute milliseconds are machine- and model-specific; measure your own before trusting mine.** Query-embedding latency, not the scan, is the dominant cost on this machine. Read the columns against each other and across corpus sizes, not as benchmarks of your laptop.
 - **Respect the asymmetric prompts.** Same reasoning as above: the model was trained on two distinct roles for `search_document:` and `search_query:` text, and collapsing them onto the same prefix is the most common way to quietly wreck recall with this model.
 - **Brute-force semantic search is O(n).** Fine to a few thousand sessions. Past that, an approximate-nearest-neighbor index turns the fallback sub-linear, at the cost of build time and exact recall. `sqlite-vec`, FAISS, and Annoy (Approximate Nearest Neighbors Oh Yeah) are the usual candidates; worth actually trying once real backup data reaches that scale, which it hasn't yet.
