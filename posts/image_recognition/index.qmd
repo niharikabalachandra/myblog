@@ -6,6 +6,9 @@ categories: [code, analysis, deploy]
 image: "image.jpg"
 draft: false
 
+filters:
+  - ../../footer-center-open.lua
+  - ../../footer-inject.lua
 format:
   html:
     code-fold: true

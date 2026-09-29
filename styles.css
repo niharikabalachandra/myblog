@@ -1,1 +1,26 @@
 /* css styles */
+
+/* widen the title-block meta grid from 2 columns (Author/Published) to 3
+   (Author/Published/Stay Updated) - see title-metadata.html partial */
+#title-block-header.quarto-title-block.default .quarto-title-meta {
+  grid-template-columns: minmax(max-content, 1fr) 1fr 1fr;
+}
+
+/* the social-share extension wraps its icons in the same wide grid div
+   used for the main article's margin-note layout, which centers them
+   instead of aligning to the narrow content column like surrounding
+   footer text - un-grid just that wrapper, wherever it appears */
+div.page-columns:has(> div.social-share) {
+  display: block;
+}
+
+/* put the share icons and the Buy Me A Book button on one line - both are
+   plain divs at this point (no grid/flex conflict), safe to inline-align */
+div.page-columns:has(> div.social-share),
+#buymeacoffee-row {
+  display: inline-block;
+  vertical-align: middle;
+}
+#buymeacoffee-row {
+  margin-left: 1.25em;
+}

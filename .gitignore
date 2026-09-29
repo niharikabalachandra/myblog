@@ -2,3 +2,5 @@
 /_site/
 /claude_chat_backup/
 .DS_Store
+.env
+.env.txt

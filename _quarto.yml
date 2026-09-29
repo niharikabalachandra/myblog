@@ -33,4 +33,6 @@ format:
     theme: cosmo
     css: styles.css
     html-math-method: plain
+    template-partials:
+      - title-metadata.html
 

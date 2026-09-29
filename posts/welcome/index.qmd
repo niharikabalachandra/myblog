@@ -6,7 +6,9 @@ categories: [news]
 image: "thumbnail.jpg"
 
 filters:
+  - ../../footer-center-open.lua
   - social-share
+  - ../../footer-inject.lua
 format: 
   html:
     toc: true

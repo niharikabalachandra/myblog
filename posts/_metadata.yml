@@ -13,7 +13,3 @@ author: 'Albert Rapp'
 comments: 
   utterances: 
     repo:  niharikabalachandra/blog_comments
-
-format:
-  html:
-    include-after-body: ../footer.html

@@ -7,7 +7,9 @@ image: "image.jpg"
 draft: false
 
 filters:
+  - ../../footer-center-open.lua
   - social-share
+  - ../../footer-inject.lua
 format:
   html:
     toc: true

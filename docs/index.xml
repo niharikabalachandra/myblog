@@ -10,7 +10,500 @@
 <atom:link href="https://www.niharikabalachandra.com/index.xml" rel="self" type="application/rss+xml"/>
 <description>Niharika&#39;s blog where data points weave stories, and algorithmic solutions propel us toward a clearer, more informed future. </description>
 <generator>quarto-1.4.549</generator>
-<lastBuildDate>Mon, 10 Aug 2026 07:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 29 Sep 2026 07:00:00 GMT</lastBuildDate>
+<item>
+  <title>Tuning Jev as a Quality Judge: A Decision Model vs. Two Cost-Effective LLMs</title>
+  <dc:creator>Niharika Balachandra</dc:creator>
+  <link>https://www.niharikabalachandra.com/posts/jev-quality-judges/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><em>First in a two-part series on tuning <a href="https://openrouter.ai/typesafe/jev-1.13">Jev</a> as an LLM judge: this post covers judging response quality; the next covers judging response safety.</em></p>
+<p>Jev is a structured decision model from TypeSafe, available on OpenRouter. Send it application state and a typed question, and it returns a typed answer with a probability attached, not generated text. No chain of thought, no explanation, no free-form output at all. The hypothesis is that for a narrow yes/no or multiple-choice call, a purpose-built decision model beats a generative LLM on cost and speed without giving up much accuracy.</p>
+<p>That’s a testable claim, so I tested it: tuned Jev as a quality judge on a real dataset, benchmarked it against two low-cost general-purpose LLMs on the same held-out data, and built a hybrid that escalates to a reasoning model when Jev’s answer isn’t enough on its own. This post outlines what actually happened, including the parts that didn’t work on the first try.</p>
+<section id="what-jev-actually-is" class="level1">
+<h1>What Jev actually is</h1>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.niharikabalachandra.com/posts/jev-quality-judges/architecture-diagram.png" class="img-fluid figure-img"></p>
+<figcaption>Traditional LLMs generate a reply one token at a time, each one conditioned on every token before it. Jev emits a typed, structured value in a single parallel pass instead of generating a string sequentially. Architecture as described by typesafe.ai.</figcaption>
+</figure>
+</div>
+<p>The entire request surface is three fields: <code>state</code> (a string or JSON object, the context to judge), <code>questions</code> (a dictionary of typed questions), and some optional metadata. A question is one of three primitives: <code>noul</code> (yes/no), <code>choice</code> (pick one of several options), or <code>score</code> (rank on an ordered scale). Here’s a real request I sent it, judging whether a translated email preserves the nuance of the original:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-2">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"model"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"typesafe/jev-1.13"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-3">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"state"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-4">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"instruction"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"...translate this email into English for my boss..."</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-5">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"response"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The translated English email...L'union fait la force..."</span></span>
+<span id="cb1-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">},</span></span>
+<span id="cb1-7">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"questions"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-8">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"is_high_quality"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-9">      <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"type"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"noul"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-10">      <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"instructions"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Is the response capable of precise translation and communication in various languages while preserving the substance and finer points of the dialogue?"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-11">      <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"criteria"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">{</span></span>
+<span id="cb1-12">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"true"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The model translates and communicates in various languages without any flaws, perfectly preserving the substance and nuances."</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">,</span></span>
+<span id="cb1-13">        <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">"false"</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">:</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The model demonstrates no capacity to translate or communicate, or does so incorrectly, losing the substance and finer points."</span></span>
+<span id="cb1-14">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-15">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-16">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span>
+<span id="cb1-17"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">}</span></span></code></pre></div>
+<p>The response is <code>{"is_high_quality": {"noul": 0.31}}</code>, plus token usage and cost. That’s it. There is no field anywhere in this schema for exemplars, conversation history, or worked examples. If you want to give Jev something like a few-shot prompt, there’s no supported way to do it, which matters later in this post.</p>
+</section>
+<section id="turning-a-1-5-rubric-into-a-yesno-question" class="level1">
+<h1>Turning a 1-5 rubric into a yes/no question</h1>
+<p>I benchmarked the quality judge on <a href="https://huggingface.co/datasets/prometheus-eval/Feedback-Collection">Feedback-Collection</a>, the dataset built for the Prometheus evaluator-LLM project: 1,000 rubrics, 20,000 instructions, 100,000 GPT-4-scored responses, each on a 1-5 scale with a written description for what each of the five levels looks like. I binarized it: score &gt;3 is high quality, ≤3 is low, with low quality as the positive class, matching the outcome an actual quality gate cares about, correctly catching bad responses. Sampling one response per distinct rubric (996 available, 950 used across dev and test) gets maximum rubric diversity with zero repeats, and lands close to the population’s real split: 58% low / 42% high in both the 200-example dev set and the 750-example held-out test set.</p>
+<p>Jev’s <code>is_high_quality</code> question needs a <code>criteria.true</code> string, what “high quality” looks like, and a <code>criteria.false</code> string, what “low quality” looks like. Feedback-Collection doesn’t hand those over directly: its rubric comes as five separate level descriptions, not two buckets. So <code>criteria.true</code> had to be built by combining levels 4 and 5 (my “high” bucket) into one string, and <code>criteria.false</code> from levels 1 through 3. My first attempt just glued the kept levels’ descriptions together with a space and called it done:</p>
+<blockquote class="blockquote">
+<p>“The model often identifies the emotional context and reacts suitably, with minor cases of misreading or misjudging. The model flawlessly identifies the emotional context of the user’s input and consistently responds in a considerate and empathetic manner.”</p>
+</blockquote>
+<p>That’s level 4’s description directly followed by level 5’s, no separator, no signal that these are two different reference points. It reads broken because the two levels are written in genuinely different registers: level 4 is hedged, since it’s describing “pretty good but not perfect” (“<em>often</em> identifies… with <em>minor cases</em> of misreading”), while level 5 is absolute, since it’s the top rung (“<em>flawlessly</em> identifies… <em>consistently</em> responds”). Smashed into one sentence, that reads like a single claim flip-flopping between “usually right, sometimes wrong” and “never wrong,” an apparent contradiction, when it’s really just two rungs on a ladder that got flattened into one. The fix keeps every word from the dataset, unedited, and just labels which rung each sentence came from instead of blending them:</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">def</span> _leveled_criteria(row, levels):</span>
+<span id="cb2-2">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">return</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">" "</span>.join(</span>
+<span id="cb2-3">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"(Level </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>i<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">) </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>row[<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f'orig_score</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>i<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">_description'</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> levels</span>
+<span id="cb2-4">    )</span></code></pre></div>
+<p><code>(Level 4) ...often identifies... (Level 5) ...flawlessly identifies...</code> now reads as two labeled data points on a scale instead of one self-contradicting claim, purely from adding the labels, nothing rewritten.</p>
+<p>I deliberately dropped the reference answer that Feedback-Collection was designed to be judged against. The dataset’s scores assume a gold answer is available for comparison; a real quality gate usually doesn’t have one. Every number in this post is a judge working without a reference, which is the harder and more realistic version of the task.</p>
+</section>
+<section id="zero-shot-three-systems-one-held-out-test-set" class="level1">
+<h1>Zero-shot: three systems, one held-out test set</h1>
+<p>Jev against two low-cost-tier LLMs, chosen deliberately over a flagship model: Haiku 4.5 and GPT-6 Luna are both “keep cost down” tiers, so the comparison is honest instead of favoring Jev by pitting it against something expensive. All three ran the same 750-example held-out test set, zero-shot, before any tuning:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>System</th>
+<th>Acc</th>
+<th>Prec</th>
+<th>Recall</th>
+<th>F1</th>
+<th>p50 latency</th>
+<th>$/call</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jev</td>
+<td>0.765</td>
+<td>0.865</td>
+<td>0.706</td>
+<td>0.777</td>
+<td>209ms</td>
+<td>$0.0000314</td>
+</tr>
+<tr class="even">
+<td>Haiku 4.5</td>
+<td>0.759</td>
+<td>0.887</td>
+<td>0.669</td>
+<td>0.763</td>
+<td>1748ms</td>
+<td>$0.0009215</td>
+</tr>
+<tr class="odd">
+<td>GPT-6 Luna</td>
+<td>0.681</td>
+<td>0.695</td>
+<td>0.802</td>
+<td>0.745</td>
+<td>2345ms</td>
+<td>$0.0001133</td>
+</tr>
+</tbody>
+</table>
+<p>Jev leads on both accuracy and F1, zero-shot, before any tuning at all, while being roughly <strong>8-11x faster</strong> and <strong>3-29x cheaper</strong> per call. Quality judging is hard for all three systems here: none of them clears 77% accuracy.</p>
+<p>Getting the LLMs to answer at all took a real fix first. Both were prompted with a plain instruction (state the case, restate the criteria, respond in a strict <code>VERDICT</code> / <code>CONFIDENCE</code> / <code>REASON</code> format), and Luna initially failed to parse on 9 of 200 dev calls, always the same way: <code>output_tokens</code> pinned exactly at the 200-token cap, <code>content</code> an empty string. <code>quality-128</code> is typical:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> Analyse the economic impact of the COVID-19 pandemic on the global aviation industry… supported by accurate data and relevant information.</p>
+<p><strong>Response:</strong> The COVID-19 pandemic has inflicted severe economic damages on the global aviation sector. The International Air Transport Association (IATA) projects a loss of $314 billion for airlines worldwide in 2020, a 55% decline from 2019’s figures… [continues through tourism/hospitality ripple effects, long-term connectivity implications, and proposed solutions]</p>
+<p><strong>Criterion:</strong> Is the model fully knowledgeable about the subject matter, delivering precise and pertinent data? (ground truth: score 5, high quality)</p>
+</blockquote>
+<p>Judging this pair against that criterion returned: <code>finish_reason: "length"</code>, <code>content: null</code>, and <code>completion_tokens_details.reasoning_tokens: 200</code>, exactly equal to the 200-token cap. Every completion token went to reasoning, and the reasoning itself is a genuine, substantive evaluation of the response, visible in the API’s <code>reasoning</code> field, it just never finished converting into the requested <code>VERDICT</code> / <code>CONFIDENCE</code> / <code>REASON</code> answer before the budget ran out. This is a documented failure mode: OpenRouter’s own reasoning-tokens guide states it plainly, “if the limit is small enough that the model spends all of it reasoning, the response returns <code>finish_reason: 'length'</code> with an empty <code>content</code>, and the reasoning tokens are still billed.” Raising the cap to 600 tokens fixed all of it, zero parse errors after. Jev can’t have this failure mode at all, structurally: it doesn’t generate free text, so there’s no reasoning process competing with the answer for budget.</p>
+</section>
+<section id="tuning-jev-the-first-fix-made-things-worse" class="level1">
+<h1>Tuning Jev: the first fix made things worse</h1>
+<p>Jev’s <code>criteria</code> text is the only lever that obviously exists, so the first tuning attempt rewrote it. I mined the dev set’s false negatives and false positives (highest-confidence-wrong first) and found a real pattern: Jev’s misses were mostly <em>surface-competent-but-shallow</em> responses, correct facts delivered tersely, generic empathy with no personalization, no follow-up question when the situation called for one. <code>quality-2</code> is typical:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> In an online therapy chatbot program, a user has expressed feelings of loneliness and frustration due to their inability to socialize during a pandemic. The user also mentions struggling with a sense of loss, as they recently lost a beloved pet… ensure the AI model responds… with understanding, empathy, and thoughtfulness.</p>
+<p><strong>Response:</strong> It seems you’re feeling lonely due to the pandemic restrictions and you also lost your pet recently, which is quite sad. The current situation is indeed difficult, and it’s completely normal to feel isolated. You should try to be active and maybe engage in some hobbies to distract yourself. Even though we’re in a pandemic, there are ways to connect with people… If the feelings of loneliness persist, you should consult a professional.</p>
+<p><strong>Criterion:</strong> Is the model able to comprehend and react to emotional signals in the user’s language, showing sensitivity and thoughtfulness? (ground truth: score 2, low quality)</p>
+</blockquote>
+<p>Zero-shot Jev rated this 0.60, leaning high quality, wrong. The response acknowledges both things the user said, then defaults to boilerplate, with no follow-up question and no engagement with the specific loss mentioned. I added an explicit instruction targeting exactly that pattern:</p>
+<blockquote class="blockquote">
+<p>“A response that is superficially competent but generic, non-personalized, or fails to follow through on what the situation actually calls for… should be scored as NOT meeting the high-quality bar, even if nothing in it is factually wrong.”</p>
+</blockquote>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Acc</th>
+<th>Prec</th>
+<th>Recall</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Baseline (zero-shot)</td>
+<td>0.700</td>
+<td>0.792</td>
+<td>0.655</td>
+<td>0.717</td>
+</tr>
+<tr class="even">
+<td>Tuned, criteria rewrite</td>
+<td>0.670</td>
+<td>0.667</td>
+<td>0.862</td>
+<td>0.752</td>
+</tr>
+</tbody>
+</table>
+<p>The rewrite fixed <code>quality-2</code> (0.60 -&gt; 0.31, now correctly leaning low quality) along with 23 similar cases. But recall jumping from 0.655 to 0.862 came with precision cratering from 0.792 to 0.667, and accuracy actually dropped. <code>quality-7</code> shows the mechanism:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> A user comes to a peer support forum, expressing deep sadness and frustration over a recent job loss. They’re feeling anxious about the future… How do you respond to this post in a manner that shows empathy and understanding?</p>
+<p><strong>Response:</strong> I’m really sorry to hear that you’re going through such a tough time. Losing a job is definitely a stressful event and it’s okay to feel anxious about the future. I just want you to know that it’s alright to feel this way. You’re more than your job and your skills are still intact. It might be helpful to take some time for yourself and do things you love to help manage your stress… Keep faith in yourself. Things will improve over time.</p>
+<p><strong>Criterion:</strong> Does the response show empathy and understanding towards the user’s feelings or situation? (ground truth: score 4, high quality)</p>
+</blockquote>
+<p>Zero-shot Jev correctly rated this 0.84. Tuned Jev drops it to 0.44, wrong. The response is specific to what was said (“You’re more than your job and your skills are still intact”), not generic, but it’s still built from recognizable comforting phrases and gentle suggestions, exactly the register the new instruction was told to treat as a red flag. The instruction couldn’t tell “generic because it’s actually shallow” from “sounds familiar because supportive language sounds like other supportive language,” and 29 other previously-correct cases broke the same way <code>quality-7</code> did.</p>
+</section>
+<section id="what-actually-worked-exemplars-stuffed-into-state" class="level1">
+<h1>What actually worked: exemplars stuffed into <code>state</code></h1>
+<p>Jev’s schema has no exemplar field, so testing few-shot at all meant a workaround: pack 2-3 labeled worked examples into <code>state</code> as a <code>worked_examples</code> array alongside the real case under a <code>target</code> key, and tell the <code>instructions</code> field to answer only about <code>target</code>. Whether this would move Jev’s output at all was a genuine open question. It’s a decision model, not a generative transformer, and in-context learning is a documented property of the latter, not obviously something a fundamentally different architecture inherits for free.</p>
+<p>On the dev subset, it worked, and cleanly, unlike the criteria rewrite:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Acc</th>
+<th>Prec</th>
+<th>Recall</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Baseline (zero-shot)</td>
+<td>0.711</td>
+<td>0.800</td>
+<td>0.667</td>
+<td>0.727</td>
+</tr>
+<tr class="even">
+<td>Exemplars via <code>state</code></td>
+<td>0.731</td>
+<td>0.851</td>
+<td>0.649</td>
+<td>0.736</td>
+</tr>
+</tbody>
+</table>
+<p>(Same dev subset both rows, exemplar source rows excluded from scoring to avoid trivially grading Jev on cases it was shown the answer to.) Accuracy and precision both up, F1 up, recall essentially flat, none of the tradeoff the criteria rewrite forced. That much settles the open question on its own terms: in-context exemplars do move a decision model’s output, even without a schema field designed for them, since the predictions on unseen dev cases changed in response to them.</p>
+<p>Whether that dev-set improvement was a real, generalizable gain is a separate question, and I froze this config and ran it once on the full 750-example held-out test set specifically to find out, rather than call the numbers used to pick the fix a win:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Acc</th>
+<th>Prec</th>
+<th>Recall</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Zero-shot (test)</td>
+<td>0.765</td>
+<td>0.865</td>
+<td>0.706</td>
+<td>0.777</td>
+</tr>
+<tr class="even">
+<td>Tuned, exemplars (test)</td>
+<td>0.764</td>
+<td>0.882</td>
+<td>0.685</td>
+<td>0.771</td>
+</tr>
+</tbody>
+</table>
+<p>The gain didn’t hold. Precision up, recall down, accuracy and F1 both a hair below zero-shot: a wash on the actual test set. The dev-set numbers weren’t wrong, exemplars did change Jev’s answers there, but a dev-set improvement and a generalizing improvement are different claims, and only one of them survived the held-out check. This was one tuning pass with 2-3 hand-picked exemplars, not a search over exemplar sets, so it doesn’t rule out that a larger, more representative set generalizes where this one didn’t; that’s untested here, not ruled out. Jev still leads both LLMs on F1 (0.777 zero-shot, 0.771 tuned, against Haiku’s 0.763 and Luna’s 0.745) with or without this tuning pass. That’s the claim the test set supports, not “tuning helped.”</p>
+</section>
+<section id="consistency-confidence-isnt-the-same-as-being-right-twice" class="level1">
+<h1>Consistency: confidence isn’t the same as being right twice</h1>
+<p>I re-ran a fixed 100-example subsample through each system a second time, same frozen config, and checked how often the second pass agreed with the first:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>System</th>
+<th>Agreement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jev</td>
+<td>98/100</td>
+</tr>
+<tr class="even">
+<td>Haiku 4.5</td>
+<td>100/100</td>
+</tr>
+<tr class="odd">
+<td>GPT-6 Luna</td>
+<td>92/100</td>
+</tr>
+</tbody>
+</table>
+<p>Jev’s two flips are boundary noise. <code>quality-91</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> I am an owner of a small tech company that develops mobile applications. Recently, we have been losing our customer base due to the lack of unique features in our apps… propose a creative, innovative, and feasible solution that could help our company stand out in the crowded mobile app market.</p>
+<p><strong>Response:</strong> A creative and feasible solution to help our company stand out in the mobile app market is to focus on creating a social aspect within our apps… in-app forums where users can discuss and share their experiences… an innovative referral program that rewards users for inviting friends to join the app.</p>
+<p><strong>Criterion:</strong> Can the model effectively generate creative and innovative ideas or solutions when presented with a problem or challenge? (ground truth: score 5, high quality)</p>
+</blockquote>
+<p>Jev’s response object across three separate calls on this exact input: <code>{"noul": 0.51}</code>, <code>{"noul": 0.48}</code>, <code>{"noul": 0.48}</code>, straddling the 0.5 decision line every time. That’s a coin landing on a different face, not an unstable judgment, the case was never confidently decided in the first place.</p>
+<p>Haiku was perfectly reproducible: 100/100. Luna is the one to watch, and its 8 flips are not boundary cases. <code>quality-58</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> I am a middle-aged individual with a general interest in technology but limited technical knowledge. I’ve recently bought a new smartphone, and I’m having trouble understanding how to operate certain features, such as setting up my email account, downloading apps, and managing my device’s storage… without using overly technical language or jargon.</p>
+<p><strong>Response:</strong> I’m happy to help you with your new smartphone!… 3. Managing storage: Go to ‘Settings’ and find the ‘Storage’ section… start by clearing ‘Cached data’ or ‘Unnecessary files’. For large apps or photos, move them to cloud storage or delete the ones you don’t need.</p>
+<p><strong>Criterion:</strong> Is the model able to modify its way of communication depending on the user’s comprehension level or technical expertise? (ground truth: score 5, high quality)</p>
+</blockquote>
+<p>Pass one, in full:</p>
+<pre><code>VERDICT: false
+CONFIDENCE: 87
+REASON: The response is mostly easy to follow, but it uses terms like
+"cached data" and "cloud storage" without explaining them.</code></pre>
+<p>Pass two, identical input, identical <code>temperature: 0</code>: <code>VERDICT: true, CONFIDENCE: 95</code>. Two confident, opposite answers from the same model on the same input, one of them citing specific jargon (“cached data,” “cloud storage”) as the reason for a low-quality verdict, the other reversing that verdict entirely at even higher confidence. The second pass happened to land on the correct side; that’s luck, not improved reasoning. A self-reported confidence score is only useful if it tracks real uncertainty, and here it doesn’t: 87% and 95% confident, on opposite conclusions, back to back.</p>
+</section>
+<section id="the-hybrid-escalating-to-a-reasoning-model-when-jev-flags-something" class="level1">
+<h1>The hybrid: escalating to a reasoning model when Jev flags something</h1>
+<p>Jev can’t explain a verdict; it doesn’t generate the words to do it. The natural next question is whether flagged cases should escalate to a real reasoning model for the explanation a human would actually want. The base judge here is the tuned config, decided before the test-set check above. McNemar’s test checks whether two configs scored on the same items actually differ, by looking only at the cases where they disagree with each other and asking whether that split is lopsided or roughly a coin flip: on the two configs’ paired predictions here, 22 cases flipped from correct to wrong, 21 flipped from wrong to correct, giving p = 1.0, no detectable difference, so that choice doesn’t meaningfully change anything below. I tried two escalation rules against the same frozen Jev, both routing to Sonnet 5 for a second opinion:</p>
+<table class="table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule</th>
+<th>Escalated</th>
+<th>Hybrid Acc</th>
+<th>Prec</th>
+<th>Recall</th>
+<th>F1</th>
+<th>vs.&nbsp;Jev alone</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Jev alone</td>
+<td>-</td>
+<td>0.764</td>
+<td>0.882</td>
+<td>0.685</td>
+<td>0.771</td>
+<td>baseline</td>
+</tr>
+<tr class="even">
+<td>Escalate every flagged case</td>
+<td>45.1%</td>
+<td>0.765</td>
+<td>0.894</td>
+<td>0.676</td>
+<td>0.770</td>
+<td>flat</td>
+</tr>
+<tr class="odd">
+<td>Escalate only uncertain cases</td>
+<td>18.5%</td>
+<td>0.785</td>
+<td>0.849</td>
+<td>0.766</td>
+<td>0.805</td>
+<td>better</td>
+</tr>
+</tbody>
+</table>
+<p>Escalating everything Jev flags is close to a wash. Escalating only the cases Jev itself was unsure about (probability within 0.15 of the 0.5 line) is a real win: accuracy up 2 points, recall up 8, F1 up 3.4, while asking Sonnet about 2.5x fewer cases. The mechanism is visible in individual examples. <code>quality-108</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> In a multinational corporation, an executive who speaks very formally is having a conversation with a new intern who speaks in a more casual, millennial lingo… The executive is asking the intern to explain the project plan in his own words.</p>
+<p><strong>Response:</strong> Sure thing! Let’s dive into the gist of our project. First off, we’ve got the discovery phase… Next up, it’s the ideation phase… Finally, we hit the action phase. This is where we roll up our sleeves and bring our best ideas to life.</p>
+<p><strong>Criterion:</strong> To what extent is the model versatile in adjusting to varied communication styles and tones? (ground truth: score 5, high quality)</p>
+</blockquote>
+<p>Jev underrated this at 0.22, leaning low quality. Sonnet: <code>"...uses casual, millennial-style phrasing ('Sure thing,' 'out-of-the-box,' 'roll up our sleeves') that matches the intern's persona..."</code> Specific, textually grounded, correct, exactly the value a reasoning layer is supposed to add on a case the base judge was shaky about.</p>
+<p>But escalation isn’t free of its own failure mode. <code>quality-26</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> During a consultation session, an individual is seeking advice about a complex issue related to their personal life. The individual starts by discussing their close relationship with their sibling, but then moves on to talk about their job, where they’re facing challenges due to a difficult coworker. They also discuss their romantic relationship… torn between moving away to a new city for a better job opportunity or staying put.</p>
+<p><strong>Response:</strong> This situation you’re in is indeed complicated. You seem to have a tight bond with your sibling, making it hard for you to think about moving away. Regarding your current job, it sounds like you’re having issues because of a coworker. Could it be a temporary issue or will it persist?… Discussing this with a counselor or someone you trust could provide useful insights.</p>
+<p><strong>Criterion:</strong> How well does the model maintain a coherent conversation over multiple turns? (ground truth: score 3, low quality)</p>
+</blockquote>
+<p>Jev leaned correctly toward low quality (0.41). Sonnet flipped it to high quality, and its own stated reason names the exact flaw that should have kept the verdict low: <code>"...though it doesn't probe deeper into subtle nuances like the coworker conflict's specifics."</code> The rationale identifies the problem and the verdict ignores it. A stated explanation isn’t automatically a faithful one, and escalating to a model that reasons out loud doesn’t guarantee the reasoning and the conclusion actually agree.</p>
+</section>
+<section id="a-caveat-i-didnt-expect-the-ground-truth-disagrees-with-the-reasoning-model-too" class="level1">
+<h1>A caveat I didn’t expect: the ground truth disagrees with the reasoning model too</h1>
+<p>Before trusting a hybrid’s numbers, both halves need tuning, not just the one that’s easy to tune. I’d only tuned Jev; Sonnet was running the same generic zero-shot judge prompt built for the Haiku/Luna baselines. So I built a dev set restricted to the specific cases Jev’s frozen config would actually escalate, and mined Sonnet’s own errors on it the same way I’d mined Jev’s.</p>
+<p>What came back wasn’t a prompt-wording gap. Sonnet was wrong in the strict sense on 15 of 112 escalation-dev cases by being <em>stricter</em> than the dataset, not sloppier. <code>quality-156</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> I am an author writing a novel that includes characters from different cultures, specifically from the United States, Japan, India, and Egypt… write these culturally diverse characters without falling into stereotypes or cultural inaccuracies?</p>
+<p><strong>Response:</strong> …1. United States: Characters from the US… 2. Japan: Japanese characters often exhibit politeness… 3. India: Indian characters should be crafted according to their specific background… 4. Egypt: Egyptian characters could be portrayed as hospitable and family-oriented…</p>
+<p><strong>Criterion:</strong> Is the model effectively showcasing a thorough comprehension of cultural subtleties and considerations in its replies? (ground truth: score 4, high quality)</p>
+</blockquote>
+<p>Sonnet, 88% confident: “offers only surface-level, generic generalizations… bordering on stereotypes.” <code>quality-114</code>:</p>
+<blockquote class="blockquote">
+<p><strong>Instruction:</strong> I have a meeting with my boss to discuss a potential collaboration with another company. I need to justify the collaboration, highlight its benefits, and address any potential concerns… my response needs to be carefully crafted and professionally presented.</p>
+<p><strong>Response:</strong> I’m of the view that joining forces with XYZ Company can be advantageous to us… Sure, there are concerns like intellectual property rights and workflow disruption. But I reckon we could iron out these wrinkles with a good contract and a phased integration plan…</p>
+<p><strong>Criterion:</strong> Is the answer written professionally and formally, so that I could send it to my boss? (ground truth: score 4, high quality)</p>
+</blockquote>
+<p>Sonnet: “contains several casual colloquialisms… that undermine the professional tone.”</p>
+<p>Feedback-Collection’s scores were generated by GPT-4. A newer model disagreeing with an older one’s judgment isn’t a bug I can fix with better instructions, it’s the actual, unresolved problem with building any quality benchmark on LLM-generated labels: the ground truth has an opinion too, and that opinion can go stale. This escalation prompt stayed untuned: closing the gap would mean optimizing Sonnet toward matching GPT-4’s specific judgments, not toward being more correct, and those are different targets.</p>
+</section>
+<section id="caveats" class="level1">
+<h1>Caveats</h1>
+<ul>
+<li><strong>Ground truth generated by an LLM has an LLM’s opinions baked in.</strong> Feedback-Collection’s scores came from GPT-4. A stronger, more recent model disagreeing with those scores isn’t necessarily the stronger model being wrong; it may be catching real shortcomings the original labeling missed, or it may be pickier than the standard the dataset actually wants. I didn’t try to resolve which, and that’s a real limit on what “accuracy against this test set” can claim.</li>
+<li><strong>The first tuning attempt made Jev worse, not better.</strong> Rewriting <code>criteria</code> text to target a real error pattern traded precision for recall hard enough to drop overall accuracy. Tuning loops don’t reliably land on the first try.</li>
+<li><strong>The second attempt looked like a clean win and didn’t survive held-out data.</strong> In-context exemplars via <code>state</code> do move Jev’s output, that part is real and it’s a genuine answer to a genuine open question about whether a decision model takes to few-shot at all. But the specific accuracy gain measured on the dev subset used to pick this fix was a wash on the actual 750-example test set. A dev-set improvement and a generalizing improvement are different claims, and only the held-out test set can tell them apart. The natural follow-up, whether a bigger, more representative exemplar pool would have generalized where this one didn’t, was tested directly on the risk judge in Part 2: a 1,000-example, non-overlapping dev pool with systematically-sampled exemplars did worse than zero-shot on both dev and the held-out test set, not better. Not tested on this exact quality task, but a real answer on the same model and the same tuning lever.</li>
+<li><strong>A stated rationale isn’t automatically a faithful one.</strong> <code>quality-26</code>’s escalated reasoning named the correct flaw and then reached the wrong verdict anyway. Reading an explanation and trusting the verdict it’s attached to are two different levels of trust.</li>
+<li><strong>Empty content, <code>output_tokens</code> pinned at the cap, <code>finish_reason: length</code> means the budget ran out on reasoning, not a parsing bug.</strong> That signature is diagnostic for reasoning-tier models specifically, and it shows up even on tasks with a short expected answer, like a three-line verdict, because the reasoning happens before the answer and draws from the same budget. Budget for reasoning-tier models accordingly from the first call: reserve headroom well past what the visible answer alone would need. Jev structurally cannot fail this way; it never generates free text, so there’s no reasoning process competing with the answer for tokens.</li>
+<li><strong>Every number here is one held-out test set, one snapshot in time for three specific models.</strong> Jev, Haiku 4.5, and GPT-6 Luna are all foundational models that change; rerun this before trusting it on a different rubric, a different quality bar, or a future version of any of these three.</li>
+</ul>
+<p>Part two covers the risk judge: a different dataset, a bigger version of the same hybrid failure mode (escalating everything drops the safety judge’s F1 by two full points, not the rounding-level dip seen here), and a ground-truth surprise of its own.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>code</category>
+  <category>tools</category>
+  <guid>https://www.niharikabalachandra.com/posts/jev-quality-judges/</guid>
+  <pubDate>Tue, 29 Sep 2026 07:00:00 GMT</pubDate>
+  <media:content url="https://www.niharikabalachandra.com/posts/jev-quality-judges/image.jpg" medium="image" type="image/jpeg"/>
+</item>
 <item>
   <title>Reliable Recall for Claude Code: OKF + Semantic Search Over Your Saved Sessions</title>
   <dc:creator>Niharika Balachandra</dc:creator>
